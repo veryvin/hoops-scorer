@@ -152,8 +152,8 @@ function showInstallBanner() {
 ══════════════════════════════ */
 const state = {
   quarter: '1',
-  home: { name:'HOME', dbId:null, score:0, fouls:0, timeouts:5, players:[], pto:0, fbp:0, twocp:0, fbto:0 },
-  away: { name:'AWAY', dbId:null, score:0, fouls:0, timeouts:5, players:[], pto:0, fbp:0, twocp:0, fbto:0 },
+  home: { name:'HOME', dbId:null, score:0, fouls:0, timeouts:2, timeoutsHalf:2, players:[], pto:0, fbp:0, twocp:0, fbto:0 },
+  away: { name:'AWAY', dbId:null, score:0, fouls:0, timeouts:2, timeoutsHalf:2, players:[], pto:0, fbp:0, twocp:0, fbto:0 },
   selectedPlayer: null,
   history: [],
   plays: [],
@@ -253,8 +253,27 @@ document.querySelectorAll('.quarter-btn').forEach(btn => {
     state.quarterScores[state.quarter] = { home:state.home.score, away:state.away.score };
     document.querySelectorAll('.quarter-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active'); state.quarter = btn.dataset.q;
+    // Reset timeouts at half transitions
+    const q = btn.dataset.q;
+    if (q === '3') {
+      // Start of 2nd half — 3 timeouts each
+      state.home.timeouts = 3; state.home.timeoutsHalf = 3;
+      state.away.timeouts = 3; state.away.timeoutsHalf = 3;
+      toast('Q3 started — 3 timeouts per team');
+    } else if (q === '1') {
+      // Start of 1st half — 2 timeouts each
+      state.home.timeouts = 2; state.home.timeoutsHalf = 2;
+      state.away.timeouts = 2; state.away.timeoutsHalf = 2;
+      toast('Q1 started — 2 timeouts per team');
+    } else if (q === '2') {
+      toast(`Q2 started`);
+    } else if (q === '4') {
+      toast(`Q4 started`);
+    } else {
+      toast(`Q${state.quarter} started`);
+    }
     resetClock(); addPlay(null,`Quarter ${state.quarter} started`,'sys',0); scheduleSaveGame();
-    toast(`Q${state.quarter} started`);
+    updateMeta();
   });
 });
 
@@ -1017,10 +1036,11 @@ function updateSpecialStats() {
 document.querySelectorAll('.timeout-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const team=btn.dataset.team;
-    if (state[team].timeouts<=0) { toast('No timeouts!'); return; }
+    if (state[team].timeouts<=0) { toast('No timeouts left this half!'); return; }
     const snap=captureSnapshot(); state[team].timeouts--;
     updateMeta(); addPlay(team,`${teamName(team)} called timeout`,team,0);
     state.history.push(snap); scheduleSaveGame();
+    toast(`Timeout called — ${state[team].timeouts} remaining`);
   });
 });
 
@@ -1101,7 +1121,7 @@ async function resetGame() {
     try { await db.update('games',{status:'finished',winner_team_id:winner,updated_at:new Date().toISOString()},{' id':`eq.${state.currentGameId}`}); } catch(e){}
   }
   ['home','away'].forEach(team=>{
-    state[team].score=0;state[team].fouls=0;state[team].timeouts=5;
+    state[team].score=0;state[team].fouls=0;state[team].timeouts=2;state[team].timeoutsHalf=2;
     state[team].pto=0;state[team].fbp=0;state[team].twocp=0;state[team].fbto=0;
     state[team].players.forEach(p=>{p.pts=0;p.fgm=0;p.fga=0;p.tpm=0;p.tpa=0;p.ftm=0;p.fta=0;p.or=0;p.dr=0;p.ast=0;p.stl=0;p.blk=0;p.to=0;p.fls=0;p.pto=0;p.fbp=0;p.twocp=0;p.fbto=0;p.dbStatId=null;});
   });
@@ -1150,8 +1170,8 @@ function buildScoresheet() {
   $('ssTeamA').textContent=hn; $('ssTeamB').textContent=an;
   $('ssRosterTeamA').textContent=hn; $('ssRosterTeamB').textContent=an;
   if (!$('ssDate').value) $('ssDate').value=new Date().toISOString().split('T')[0];
-  buildToBoxes('ssHomeTO1',2); buildToBoxes('ssHomeTO2',2);
-  buildToBoxes('ssAwayTO1',2); buildToBoxes('ssAwayTO2',2);
+  buildToBoxes('ssHomeTO1',2); buildToBoxes('ssHomeTO2',3);
+  buildToBoxes('ssAwayTO1',2); buildToBoxes('ssAwayTO2',3);
   buildFoulGrid('ssHomeFoulBoxes',8); buildFoulGrid('ssAwayFoulBoxes',8);
   buildRosterTable('ssHomeRosterBody',state.home.players);
   buildRosterTable('ssAwayRosterBody',state.away.players);
@@ -1255,18 +1275,13 @@ function buildRunningScore() {
 
       if (grp > 0) html += `<td class="rs-divider-cell"></td>`;
 
-      /* A (home) player# cell */
-      const aPlayer = ev && ev.team === 'home' ? ev.playerNum : '';
-      /* B (away) player# cell */
-      const bPlayer = ev && ev.team === 'away' ? ev.playerNum : '';
-
-      /* Center number cell — highlighted if scored */
+      /* Center number cell — highlighted if scored. A/B cells are empty (no player numbers shown). */
       let numClass = 'rs-num';
       if (ev) numClass += ev.team === 'home' ? ' scored-home' : ' scored-away';
 
-      html += `<td class="rs-a">${aPlayer !== '' && aPlayer !== null && aPlayer !== undefined ? aPlayer : ''}</td>`;
+      html += `<td class="rs-a"></td>`;
       html += `<td class="${numClass}">${num}</td>`;
-      html += `<td class="rs-b">${bPlayer !== '' && bPlayer !== null && bPlayer !== undefined ? bPlayer : ''}</td>`;
+      html += `<td class="rs-b"></td>`;
     }
 
     tr.innerHTML = html;
