@@ -5,29 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="theme-color" content="#f5c518"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="HOOPS"/>
-  <meta name="description" content="Real-time basketball scorer with standings and stats"/>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="apple-touch-icon" href="icon-192.png"/>
   <title>HOOPS — Basketball Scorer</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css"/>
-</head>
-<body>
+    <link rel="stylesheet" href="style.css"/>
+</head><body>
+
 
   <!-- ══════════════ NAV ══════════════ -->
   <nav class="main-nav">
-    <div class="nav-logo">🏀 HOOPS</div>
+    <div class="nav-top-row">
+      <div class="nav-logo">🏀 HOOPS</div>
+      <div class="nav-status">
+        <div class="online-dot" id="onlineDot"></div>
+        <span class="online-label" id="onlineLabel">LIVE</span>
+      </div>
+    </div>
     <div class="nav-links">
       <button class="nav-btn active" data-view="scorer">📊 SCORER</button>
       <button class="nav-btn" data-view="games">🏀 GAMES</button>
       <button class="nav-btn" data-view="teams">👥 TEAMS</button>
       <button class="nav-btn" data-view="standings">🏆 STANDINGS</button>
-    </div>
-    <div class="nav-status">
-      <div class="online-dot" id="onlineDot"></div>
-      <span class="online-label" id="onlineLabel">LIVE</span>
     </div>
   </nav>
 
@@ -54,16 +52,49 @@
 
     <!-- SCOREBOARD -->
     <section class="scoreboard">
+      <!-- HOME -->
       <div class="team-score-block home">
         <button class="team-name-btn home-name-btn" id="homeNameBtn">
           <span id="homeNameDisplay">HOME</span><span class="team-edit-icon">✎</span>
         </button>
         <div class="score-display" id="homeScore">0</div>
-        <div class="score-quick">
-          <button class="sq-btn" data-team="home" data-pts="1">FT</button>
-          <button class="sq-btn" data-team="home" data-pts="2">2</button>
-          <button class="sq-btn" data-team="home" data-pts="3">3</button>
+
+        <!-- STAT TRACKING BUTTONS — count only on scoresheet, NOT main score -->
+        <div class="stat-groups-row">
+          <div class="stat-group">
+            <div class="stat-group-label">PTO</div>
+            <div class="stat-group-btns">
+              <button class="sg-btn" data-team="home" data-action="pto2">2</button>
+              <button class="sg-btn" data-team="home" data-action="pto3">3</button>
+            </div>
+            <div class="stat-group-count" id="homePTOCount">0</div>
+          </div>
+          <div class="stat-group">
+            <div class="stat-group-label">FBP</div>
+            <div class="stat-group-btns">
+              <button class="sg-btn" data-team="home" data-action="fbp2">2</button>
+              <button class="sg-btn" data-team="home" data-action="fbp3">3</button>
+            </div>
+            <div class="stat-group-count" id="homeFBPCount">0</div>
+          </div>
+          <div class="stat-group">
+            <div class="stat-group-label">2CP</div>
+            <div class="stat-group-btns">
+              <button class="sg-btn" data-team="home" data-action="2cp2">2</button>
+              <button class="sg-btn" data-team="home" data-action="2cp3">3</button>
+            </div>
+            <div class="stat-group-count" id="home2CPCount">0</div>
+          </div>
+          <div class="stat-group">
+            <div class="stat-group-label">FBTO</div>
+            <div class="stat-group-btns">
+              <button class="sg-btn" data-team="home" data-action="fbto2">2</button>
+              <button class="sg-btn" data-team="home" data-action="fbto3">3</button>
+            </div>
+            <div class="stat-group-count" id="homeFBTOCount">0</div>
+          </div>
         </div>
+
         <div class="team-meta">
           <div class="meta-item">TO <span id="homeTO">5</span></div>
           <div class="meta-item">FOULS <span id="homeFouls">0</span></div>
@@ -72,9 +103,11 @@
           <div class="sp-pill">PTO <span id="homePTO">0</span></div>
           <div class="sp-pill">FBP <span id="homeFBP">0</span></div>
           <div class="sp-pill">2CP <span id="home2CP">0</span></div>
+          <div class="sp-pill fbto-pill">FBTO <span id="homeFBTO">0</span></div>
         </div>
       </div>
 
+      <!-- VS + CLOCK -->
       <div class="vs-block">
         <div class="vs-text">VS</div>
         <div class="clock-wrapper">
@@ -96,16 +129,49 @@
         <button class="undo-btn" id="btnUndo">↩ UNDO</button>
       </div>
 
+      <!-- AWAY -->
       <div class="team-score-block away">
         <button class="team-name-btn away-name-btn" id="awayNameBtn">
           <span id="awayNameDisplay">AWAY</span><span class="team-edit-icon">✎</span>
         </button>
         <div class="score-display" id="awayScore">0</div>
-        <div class="score-quick">
-          <button class="sq-btn" data-team="away" data-pts="1">FT</button>
-          <button class="sq-btn" data-team="away" data-pts="2">2</button>
-          <button class="sq-btn" data-team="away" data-pts="3">3</button>
+
+        <!-- STAT TRACKING BUTTONS — count only on scoresheet, NOT main score -->
+        <div class="stat-groups-row">
+          <div class="stat-group">
+            <div class="stat-group-label">PTO</div>
+            <div class="stat-group-btns">
+              <button class="sg-btn" data-team="away" data-action="pto2">2</button>
+              <button class="sg-btn" data-team="away" data-action="pto3">3</button>
+            </div>
+            <div class="stat-group-count" id="awayPTOCount">0</div>
+          </div>
+          <div class="stat-group">
+            <div class="stat-group-label">FBP</div>
+            <div class="stat-group-btns">
+              <button class="sg-btn" data-team="away" data-action="fbp2">2</button>
+              <button class="sg-btn" data-team="away" data-action="fbp3">3</button>
+            </div>
+            <div class="stat-group-count" id="awayFBPCount">0</div>
+          </div>
+          <div class="stat-group">
+            <div class="stat-group-label">2CP</div>
+            <div class="stat-group-btns">
+              <button class="sg-btn" data-team="away" data-action="2cp2">2</button>
+              <button class="sg-btn" data-team="away" data-action="2cp3">3</button>
+            </div>
+            <div class="stat-group-count" id="away2CPCount">0</div>
+          </div>
+          <div class="stat-group">
+            <div class="stat-group-label">FBTO</div>
+            <div class="stat-group-btns">
+              <button class="sg-btn" data-team="away" data-action="fbto2">2</button>
+              <button class="sg-btn" data-team="away" data-action="fbto3">3</button>
+            </div>
+            <div class="stat-group-count" id="awayFBTOCount">0</div>
+          </div>
         </div>
+
         <div class="team-meta">
           <div class="meta-item">TO <span id="awayTO">5</span></div>
           <div class="meta-item">FOULS <span id="awayFouls">0</span></div>
@@ -114,6 +180,7 @@
           <div class="sp-pill">PTO <span id="awayPTO">0</span></div>
           <div class="sp-pill">FBP <span id="awayFBP">0</span></div>
           <div class="sp-pill">2CP <span id="away2CP">0</span></div>
+          <div class="sp-pill fbto-pill">FBTO <span id="awayFBTO">0</span></div>
         </div>
       </div>
     </section>
@@ -154,9 +221,6 @@
             <button class="act-btn blue"    data-action="blk">B<br><small>Block</small></button>
             <button class="act-btn miss"    data-action="to">T<br><small>Turnover</small></button>
             <button class="act-btn miss"    data-action="foul">F<br><small>Foul</small></button>
-            <button class="act-btn special" data-action="pto">PTO<br><small>Pts off TO</small></button>
-            <button class="act-btn special" data-action="fbp">FBP<br><small>Fast Break</small></button>
-            <button class="act-btn special" data-action="2cp">2CP<br><small>2nd Chance</small></button>
           </div>
           <div class="timeout-row">
             <button class="timeout-btn home-to" data-team="home">⏱ HOME TIMEOUT</button>
@@ -179,7 +243,7 @@
                 <th>Player</th><th>POS</th><th>STATUS</th><th>PTS</th>
                 <th>FGM</th><th>FGA</th><th>3PM</th><th>3PA</th><th>FTM</th><th>FTA</th>
                 <th>OR</th><th>DR</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th>
-                <th>TO</th><th>FLS</th><th class="special-col">PTO</th><th class="special-col">FBP</th><th class="special-col">2CP</th>
+                <th>TO</th><th>FLS</th><th class="special-col">PTO</th><th class="special-col">FBP</th><th class="special-col">2CP</th><th class="special-col fbto-col">FBTO</th>
               </tr></thead>
               <tbody id="statsBody"></tbody>
             </table>
@@ -439,12 +503,70 @@
             </table>
             <div class="ss-winner">Name of winning team: <strong id="ssWinner" class="ss-winner-name">—</strong></div>
           </div>
+
+          <!-- FIBA TEAM STATS TABLE -->
+          <div class="ss-team-stats-block">
+            <div class="ss-team-stats-title">TEAM STATISTICS</div>
+            <table class="ss-team-stats-table">
+              <thead>
+                <tr>
+                  <th class="ss-ts-label">STAT</th>
+                  <th class="ss-ts-a">TEAM A</th>
+                  <th class="ss-ts-b">TEAM B</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="ss-ts-label">Points from Turnovers</td>
+                  <td class="ss-ts-a" id="ssStatPtoA">0</td>
+                  <td class="ss-ts-b" id="ssStatPtoB">0</td>
+                </tr>
+                <tr>
+                  <td class="ss-ts-label">Second Chance Points</td>
+                  <td class="ss-ts-a" id="ssStatScpA">0</td>
+                  <td class="ss-ts-b" id="ssStatScpB">0</td>
+                </tr>
+                <tr>
+                  <td class="ss-ts-label">Fast Break Points</td>
+                  <td class="ss-ts-a" id="ssStatFbpA">0</td>
+                  <td class="ss-ts-b" id="ssStatFbpB">0</td>
+                </tr>
+                <tr>
+                  <td class="ss-ts-label">Fast Break Pts from Turnovers</td>
+                  <td class="ss-ts-a" id="ssStatFbtoA">0</td>
+                  <td class="ss-ts-b" id="ssStatFbtoB">0</td>
+                </tr>
+                <tr>
+                  <td class="ss-ts-label">Bench Points</td>
+                  <td class="ss-ts-a" id="ssStatBenchA">0</td>
+                  <td class="ss-ts-b" id="ssStatBenchB">0</td>
+                </tr>
+              </tbody>
+            </table>
+            </div>
         </div>
         <div class="ss-right">
           <div class="ss-rs-title">RUNNING SCORE</div>
           <div class="ss-rs-wrap">
-            <table class="ss-rs-table">
-              <thead><tr><th>A</th><th>B</th><th></th><th>A</th><th>B</th><th></th><th>A</th><th>B</th><th></th><th>A</th><th>B</th></tr></thead>
+            <!--
+              Real FIBA format:
+              Each section = [A (player#) | score# | B (player#)]
+              Numbers 1-140 are pre-printed. Scored number gets highlighted.
+              Player jersey # appears on the side of the team that scored.
+              4 sections × 35 rows = 140 total running score slots.
+            -->
+            <table class="ss-rs-table" id="ssRunningTable">
+              <thead>
+                <tr>
+                  <th class="rs-head-a">A</th><th class="rs-head-num"></th><th class="rs-head-b">B</th>
+                  <th class="rs-divider"></th>
+                  <th class="rs-head-a">A</th><th class="rs-head-num"></th><th class="rs-head-b">B</th>
+                  <th class="rs-divider"></th>
+                  <th class="rs-head-a">A</th><th class="rs-head-num"></th><th class="rs-head-b">B</th>
+                  <th class="rs-divider"></th>
+                  <th class="rs-head-a">A</th><th class="rs-head-num"></th><th class="rs-head-b">B</th>
+                </tr>
+              </thead>
               <tbody id="ssRunningBody"></tbody>
             </table>
           </div>
@@ -468,8 +590,4 @@
         <button class="modal-btn confirm" id="confirmNewGame">Reset Game</button>
       </div>
     </div>
-  </div>
-
-  <script src="app.js"></script>
-</body>
-</html>
+  </div>  <script src="app.js"></script></body></html>
