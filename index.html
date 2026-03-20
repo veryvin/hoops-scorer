@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="theme-color" content="#f5c518"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="HOOPS"/>
   <title>HOOPS — Basketball Scorer</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet"/>
-    <link rel="stylesheet" href="style.css"/>
-</head><body>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
 
-
-  <!-- ══════════════ NAV ══════════════ -->
   <nav class="main-nav">
     <div class="nav-top-row">
       <div class="nav-logo">🏀 HOOPS</div>
@@ -29,10 +29,8 @@
     </div>
   </nav>
 
-  <!-- ══════════════ VIEW: SCORER ══════════════ -->
+  <!-- SCORER VIEW -->
   <div class="view active" id="view-scorer">
-
-    <!-- SCORER HEADER -->
     <div class="scorer-header">
       <div class="quarter-row">
         <span class="q-label">QUARTER</span>
@@ -50,16 +48,14 @@
       </div>
     </div>
 
-    <!-- SCOREBOARD -->
     <section class="scoreboard">
       <!-- HOME -->
       <div class="team-score-block home">
-        <button class="team-name-btn home-name-btn" id="homeNameBtn">
+        <button class="team-name-btn" id="homeNameBtn">
           <span id="homeNameDisplay">HOME</span><span class="team-edit-icon">✎</span>
         </button>
         <div class="score-display" id="homeScore">0</div>
-
-        <!-- STAT TRACKING BUTTONS — count only on scoresheet, NOT main score -->
+        <!-- STAT BUTTONS: track only, do NOT add to main score -->
         <div class="stat-groups-row">
           <div class="stat-group">
             <div class="stat-group-label">PTO</div>
@@ -94,7 +90,6 @@
             <div class="stat-group-count" id="homeFBTOCount">0</div>
           </div>
         </div>
-
         <div class="team-meta">
           <div class="meta-item">TO <span id="homeTO">5</span></div>
           <div class="meta-item">FOULS <span id="homeFouls">0</span></div>
@@ -107,7 +102,7 @@
         </div>
       </div>
 
-      <!-- VS + CLOCK -->
+      <!-- CLOCK -->
       <div class="vs-block">
         <div class="vs-text">VS</div>
         <div class="clock-wrapper">
@@ -131,12 +126,11 @@
 
       <!-- AWAY -->
       <div class="team-score-block away">
-        <button class="team-name-btn away-name-btn" id="awayNameBtn">
+        <button class="team-name-btn" id="awayNameBtn">
           <span id="awayNameDisplay">AWAY</span><span class="team-edit-icon">✎</span>
         </button>
         <div class="score-display" id="awayScore">0</div>
-
-        <!-- STAT TRACKING BUTTONS — count only on scoresheet, NOT main score -->
+        <!-- STAT BUTTONS: track only, do NOT add to main score -->
         <div class="stat-groups-row">
           <div class="stat-group">
             <div class="stat-group-label">PTO</div>
@@ -171,7 +165,6 @@
             <div class="stat-group-count" id="awayFBTOCount">0</div>
           </div>
         </div>
-
         <div class="team-meta">
           <div class="meta-item">TO <span id="awayTO">5</span></div>
           <div class="meta-item">FOULS <span id="awayFouls">0</span></div>
@@ -185,7 +178,6 @@
       </div>
     </section>
 
-    <!-- MAIN BODY -->
     <div class="main-body">
       <!-- HOME ROSTER -->
       <div class="roster-panel home">
@@ -227,7 +219,6 @@
             <button class="timeout-btn away-to" data-team="away">⏱ AWAY TIMEOUT</button>
           </div>
         </div>
-
         <div class="stats-panel">
           <div class="stats-header">
             <span>PLAYER STATS</span>
@@ -240,16 +231,15 @@
           <div class="stats-table-wrap">
             <table class="stats-table">
               <thead><tr>
-                <th>Player</th><th>POS</th><th>STATUS</th><th>PTS</th>
+                <th>Player</th><th>POS</th><th>ST</th><th>PTS</th>
                 <th>FGM</th><th>FGA</th><th>3PM</th><th>3PA</th><th>FTM</th><th>FTA</th>
                 <th>OR</th><th>DR</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th>
-                <th>TO</th><th>FLS</th><th class="special-col">PTO</th><th class="special-col">FBP</th><th class="special-col">2CP</th><th class="special-col fbto-col">FBTO</th>
+                <th>TO</th><th>FLS</th>
               </tr></thead>
               <tbody id="statsBody"></tbody>
             </table>
           </div>
         </div>
-
         <div class="pbp-panel">
           <div class="pbp-header"><span>PLAY BY PLAY</span><span class="pbp-count" id="pbpCount">0 plays</span></div>
           <div class="pbp-list" id="pbpList"><div class="pbp-empty">No plays yet. Start recording!</div></div>
@@ -274,7 +264,7 @@
     </div>
   </div>
 
-  <!-- ══════════════ VIEW: GAMES ══════════════ -->
+  <!-- GAMES VIEW -->
   <div class="view" id="view-games">
     <div class="page-header">
       <div class="page-title">🏀 GAMES</div>
@@ -284,23 +274,19 @@
         <button class="filter-btn" data-filter="finished">✅ FINISHED</button>
       </div>
     </div>
-    <div class="games-grid" id="gamesGrid">
-      <div class="page-loading"><div class="db-spinner"></div><span>Loading games...</span></div>
-    </div>
+    <div class="games-grid" id="gamesGrid"><div class="page-loading"><div class="db-spinner"></div><span>Loading...</span></div></div>
   </div>
 
-  <!-- ══════════════ VIEW: TEAMS ══════════════ -->
+  <!-- TEAMS VIEW -->
   <div class="view" id="view-teams">
     <div class="page-header">
       <div class="page-title">👥 REGISTERED TEAMS</div>
       <div id="teamsCount" class="page-subtitle"></div>
     </div>
-    <div class="teams-grid" id="teamsGrid">
-      <div class="page-loading"><div class="db-spinner"></div><span>Loading teams...</span></div>
-    </div>
+    <div class="teams-grid" id="teamsGrid"><div class="page-loading"><div class="db-spinner"></div><span>Loading...</span></div></div>
   </div>
 
-  <!-- ══════════════ VIEW: STANDINGS ══════════════ -->
+  <!-- STANDINGS VIEW -->
   <div class="view" id="view-standings">
     <div class="page-header">
       <div class="page-title">🏆 STANDINGS</div>
@@ -312,20 +298,13 @@
     </div>
     <div class="standings-wrap">
       <table class="standings-table" id="standingsTable">
-        <thead>
-          <tr>
-            <th>#</th><th>TEAM</th><th>GP</th><th>W</th><th>L</th>
-            <th>WIN%</th><th>PF</th><th>PA</th><th>DIFF</th>
-          </tr>
-        </thead>
-        <tbody id="standingsBody">
-          <tr><td colspan="9" class="standings-loading"><div class="db-spinner" style="margin:0 auto"></div></td></tr>
-        </tbody>
+        <thead><tr><th>#</th><th>TEAM</th><th>GP</th><th>W</th><th>L</th><th>WIN%</th><th>PF</th><th>PA</th><th>DIFF</th></tr></thead>
+        <tbody id="standingsBody"><tr><td colspan="9" class="standings-loading"><div class="db-spinner" style="margin:0 auto"></div></td></tr></tbody>
       </table>
     </div>
   </div>
 
-  <!-- ══════════════ GAME DETAIL MODAL ══════════════ -->
+  <!-- GAME DETAIL MODAL -->
   <div class="modal-overlay" id="gameDetailModal">
     <div class="modal game-detail-modal">
       <div class="gd-header">
@@ -346,7 +325,7 @@
     </div>
   </div>
 
-  <!-- ══════════════ TEAM SETUP MODAL ══════════════ -->
+  <!-- TEAM SETUP MODAL -->
   <div class="modal-overlay" id="teamSetupModal">
     <div class="modal team-setup-modal">
       <div class="ts-header">
@@ -374,7 +353,7 @@
     </div>
   </div>
 
-  <!-- ══════════════ MANAGE MODAL ══════════════ -->
+  <!-- MANAGE MODAL -->
   <div class="modal-overlay" id="manageModal">
     <div class="modal manage-modal">
       <div class="manage-modal-header">
@@ -401,7 +380,7 @@
     </div>
   </div>
 
-  <!-- ══════════════ SUBSTITUTION MODAL ══════════════ -->
+  <!-- SUBSTITUTION MODAL -->
   <div class="modal-overlay" id="subModal">
     <div class="modal sub-modal">
       <div class="sub-modal-header">
@@ -431,7 +410,7 @@
     </div>
   </div>
 
-  <!-- ══════════════ FIBA SCORESHEET ══════════════ -->
+  <!-- FIBA SCORESHEET MODAL -->
   <div class="modal-overlay" id="scoresheetModal">
     <div class="modal scoresheet-modal">
       <div class="ss-header">
@@ -503,67 +482,34 @@
             </table>
             <div class="ss-winner">Name of winning team: <strong id="ssWinner" class="ss-winner-name">—</strong></div>
           </div>
-
-          <!-- FIBA TEAM STATS TABLE -->
+          <!-- FIBA TEAM STATS -->
           <div class="ss-team-stats-block">
             <div class="ss-team-stats-title">TEAM STATISTICS</div>
             <table class="ss-team-stats-table">
-              <thead>
-                <tr>
-                  <th class="ss-ts-label">STAT</th>
-                  <th class="ss-ts-a">TEAM A</th>
-                  <th class="ss-ts-b">TEAM B</th>
-                </tr>
-              </thead>
+              <thead><tr><th class="ss-ts-label">STAT</th><th class="ss-ts-a">TEAM A</th><th class="ss-ts-b">TEAM B</th></tr></thead>
               <tbody>
-                <tr>
-                  <td class="ss-ts-label">Points from Turnovers</td>
-                  <td class="ss-ts-a" id="ssStatPtoA">0</td>
-                  <td class="ss-ts-b" id="ssStatPtoB">0</td>
-                </tr>
-                <tr>
-                  <td class="ss-ts-label">Second Chance Points</td>
-                  <td class="ss-ts-a" id="ssStatScpA">0</td>
-                  <td class="ss-ts-b" id="ssStatScpB">0</td>
-                </tr>
-                <tr>
-                  <td class="ss-ts-label">Fast Break Points</td>
-                  <td class="ss-ts-a" id="ssStatFbpA">0</td>
-                  <td class="ss-ts-b" id="ssStatFbpB">0</td>
-                </tr>
-                <tr>
-                  <td class="ss-ts-label">Fast Break Pts from Turnovers</td>
-                  <td class="ss-ts-a" id="ssStatFbtoA">0</td>
-                  <td class="ss-ts-b" id="ssStatFbtoB">0</td>
-                </tr>
-                <tr>
-                  <td class="ss-ts-label">Bench Points</td>
-                  <td class="ss-ts-a" id="ssStatBenchA">0</td>
-                  <td class="ss-ts-b" id="ssStatBenchB">0</td>
-                </tr>
+                <tr><td class="ss-ts-label">Points from Turnovers</td><td class="ss-ts-a" id="ssStatPtoA">0</td><td class="ss-ts-b" id="ssStatPtoB">0</td></tr>
+                <tr><td class="ss-ts-label">Second Chance Points</td><td class="ss-ts-a" id="ssStatScpA">0</td><td class="ss-ts-b" id="ssStatScpB">0</td></tr>
+                <tr><td class="ss-ts-label">Fast Break Points</td><td class="ss-ts-a" id="ssStatFbpA">0</td><td class="ss-ts-b" id="ssStatFbpB">0</td></tr>
+                <tr><td class="ss-ts-label">Fast Break Pts from Turnovers</td><td class="ss-ts-a" id="ssStatFbtoA">0</td><td class="ss-ts-b" id="ssStatFbtoB">0</td></tr>
+                <tr><td class="ss-ts-label">Bench Points</td><td class="ss-ts-a" id="ssStatBenchA">0</td><td class="ss-ts-b" id="ssStatBenchB">0</td></tr>
               </tbody>
             </table>
-            </div>
+          </div>
         </div>
+        <!-- RUNNING SCORE -->
         <div class="ss-right">
           <div class="ss-rs-title">RUNNING SCORE</div>
           <div class="ss-rs-wrap">
-            <!--
-              Real FIBA format:
-              Each section = [A (player#) | score# | B (player#)]
-              Numbers 1-140 are pre-printed. Scored number gets highlighted.
-              Player jersey # appears on the side of the team that scored.
-              4 sections × 35 rows = 140 total running score slots.
-            -->
-            <table class="ss-rs-table" id="ssRunningTable">
+            <table class="ss-rs-table">
               <thead>
                 <tr>
                   <th class="rs-head-a">A</th><th class="rs-head-num"></th><th class="rs-head-b">B</th>
-                  <th class="rs-divider"></th>
+                  <th class="rs-divider-h"></th>
                   <th class="rs-head-a">A</th><th class="rs-head-num"></th><th class="rs-head-b">B</th>
-                  <th class="rs-divider"></th>
+                  <th class="rs-divider-h"></th>
                   <th class="rs-head-a">A</th><th class="rs-head-num"></th><th class="rs-head-b">B</th>
-                  <th class="rs-divider"></th>
+                  <th class="rs-divider-h"></th>
                   <th class="rs-head-a">A</th><th class="rs-head-num"></th><th class="rs-head-b">B</th>
                 </tr>
               </thead>
@@ -590,4 +536,8 @@
         <button class="modal-btn confirm" id="confirmNewGame">Reset Game</button>
       </div>
     </div>
-  </div>  <script src="app.js"></script></body></html>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
