@@ -343,21 +343,32 @@ function invalidateLeagueCache() {
   _leagueCacheTime = 0;
 }
  
-async function renderNavLeagueSelect() {
-  const sel = $('navLeagueSelect');
-  if (!sel) return;
-  const current = sel.value;
-  sel.innerHTML = '<option value="">— All —</option>';
-  try {
-    const leagues = await loadLeaguesFromDB();
-    leagues.forEach(l => {
-      const opt = document.createElement('option');
-      opt.value = l.id;
-      opt.textContent = l.category !== 'Open' ? `${l.name} (${l.category})` : l.name;
-      if (l.id === current) opt.selected = true;
-      sel.appendChild(opt);
-    });
-  } catch(e) { console.warn('Nav league load failed:', e.message); }
+async function loadTeamsFromDB(leagueId) {
+  let path = `teams?select=id,name,league_id,created_at&order=name.asc`;
+  if (leagueId) path += `&league_id=eq.${leagueId}`;
+  return dbFetch(path);
+}
+
+async function loadPlayersFromDB(teamDbId) {
+  return db.select('players', { 'team_id':`eq.${teamDbId}`, 'select':'id,num,name,pos', 'order':'created_at.asc' });
+}
+
+async function savePlayerToDB(teamDbId, player) {
+  const rows = await db.insert('players', { team_id:teamDbId, num:player.num, name:player.name, pos:player.pos });
+  return rows[0].id;
+}
+
+async function deletePlayerFromDB(dbId) { if (dbId) await db.delete('players', { 'id':`eq.${dbId}` }); }
+async function deleteTeamFromDB(dbId)   { await db.delete('teams', { 'id':`eq.${dbId}` }); }
+
+async function getOrCreateTeam(name, leagueId) {
+  const existing = await db.select('teams', { 'name':`eq.${name}`, 'select':'id,name,league_id' });
+  if (existing.length) {
+    if (leagueId !== undefined) await db.update('teams', { league_id:leagueId||null }, { 'id':`eq.${existing[0].id}` });
+    return existing[0].id;
+  }
+  const created = await db.insert('teams', { name, league_id:leagueId||null });
+  return created[0].id;
 }
 
 async function createGame() {
