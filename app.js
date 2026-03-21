@@ -2497,4 +2497,3 @@ updateClockDisplay();
 renderNavLeagueSelect();
 updateGameButtons();
 connectRealtime();
-startPlaytimeTracking();
