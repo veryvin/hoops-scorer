@@ -4,11 +4,19 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="theme-color" content="#f5c518"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="HOOPS"/>
+
+  <!-- ══ NO-CACHE META TAGS — forces browser to always check for new version ══ -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
+
   <title>HOOPS — Basketball Scorer</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=3"/>
+
+  <!-- ══ CACHE-BUSTED STYLESHEET — version auto-updates every deploy ══ -->
+  <link rel="stylesheet" href="style.css?v=6"/>
 </head>
 <body>
 
@@ -25,9 +33,17 @@
       <button class="nav-btn" data-view="games">🏀 GAMES</button>
       <button class="nav-btn" data-view="teams">👥 TEAMS</button>
       <button class="nav-btn" data-view="standings">🏆 STANDINGS</button>
+      <div class="nav-league-wrap">
+        <span class="nav-league-label">LEAGUE</span>
+        <select class="nav-league-select" id="navLeagueSelect">
+          <option value="">— All —</option>
+        </select>
+        <button class="nav-league-manage" id="navLeagueManageBtn">⚙</button>
+      </div>
     </div>
   </nav>
 
+  <!-- ══ SCORER VIEW ══ -->
   <div class="view active" id="view-scorer">
     <div class="scorer-header">
       <div class="quarter-row">
@@ -39,57 +55,26 @@
         <button class="quarter-btn" data-q="OT">OT</button>
       </div>
       <div class="header-actions">
+        <button class="hdr-btn start-game-btn" id="btnStartGame">▶ START GAME</button>
+        <button class="hdr-btn end-game-btn" id="btnEndGame" style="display:none">🏁 END GAME</button>
         <button class="hdr-btn accent-btn" id="btnScoresheet">📋 Scoresheet</button>
         <button class="hdr-btn" id="btnExportCSV">CSV</button>
         <button class="hdr-btn" id="btnExportPDF">PDF</button>
-        <button class="hdr-btn danger" id="btnNewGame">New Game</button>
+        <button class="hdr-btn danger" id="btnNewGame">↺ RESET</button>
       </div>
     </div>
 
     <section class="scoreboard">
       <div class="team-score-block home">
-        <button class="team-name-btn" id="homeNameBtn">
-          <span id="homeNameDisplay">HOME</span><span class="team-edit-icon">✎</span>
-        </button>
+        <button class="team-name-btn" id="homeNameBtn"><span id="homeNameDisplay">HOME</span><span class="team-edit-icon">✎</span></button>
         <div class="score-display" id="homeScore">0</div>
         <div class="stat-groups-row">
-          <div class="stat-group">
-            <div class="stat-group-label">PTO</div>
-            <div class="stat-group-btns">
-              <button class="sg-btn" data-team="home" data-action="pto2">2</button>
-              <button class="sg-btn" data-team="home" data-action="pto3">3</button>
-            </div>
-            <div class="stat-group-count" id="homePTOCount">0</div>
-          </div>
-          <div class="stat-group">
-            <div class="stat-group-label">FBP</div>
-            <div class="stat-group-btns">
-              <button class="sg-btn" data-team="home" data-action="fbp2">2</button>
-              <button class="sg-btn" data-team="home" data-action="fbp3">3</button>
-            </div>
-            <div class="stat-group-count" id="homeFBPCount">0</div>
-          </div>
-          <div class="stat-group">
-            <div class="stat-group-label">2CP</div>
-            <div class="stat-group-btns">
-              <button class="sg-btn" data-team="home" data-action="2cp2">2</button>
-              <button class="sg-btn" data-team="home" data-action="2cp3">3</button>
-            </div>
-            <div class="stat-group-count" id="home2CPCount">0</div>
-          </div>
-          <div class="stat-group">
-            <div class="stat-group-label">FBTO</div>
-            <div class="stat-group-btns">
-              <button class="sg-btn" data-team="home" data-action="fbto2">2</button>
-              <button class="sg-btn" data-team="home" data-action="fbto3">3</button>
-            </div>
-            <div class="stat-group-count" id="homeFBTOCount">0</div>
-          </div>
+          <div class="stat-group"><div class="stat-group-label">PTO</div><div class="stat-group-btns"><button class="sg-btn" data-team="home" data-action="pto2">2</button><button class="sg-btn" data-team="home" data-action="pto3">3</button></div><div class="stat-group-count" id="homePTOCount">0</div></div>
+          <div class="stat-group"><div class="stat-group-label">FBP</div><div class="stat-group-btns"><button class="sg-btn" data-team="home" data-action="fbp2">2</button><button class="sg-btn" data-team="home" data-action="fbp3">3</button></div><div class="stat-group-count" id="homeFBPCount">0</div></div>
+          <div class="stat-group"><div class="stat-group-label">2CP</div><div class="stat-group-btns"><button class="sg-btn" data-team="home" data-action="2cp2">2</button><button class="sg-btn" data-team="home" data-action="2cp3">3</button></div><div class="stat-group-count" id="home2CPCount">0</div></div>
+          <div class="stat-group"><div class="stat-group-label">FBTO</div><div class="stat-group-btns"><button class="sg-btn" data-team="home" data-action="fbto2">2</button><button class="sg-btn" data-team="home" data-action="fbto3">3</button></div><div class="stat-group-count" id="homeFBTOCount">0</div></div>
         </div>
-        <div class="team-meta">
-          <div class="meta-item">TO <span id="homeTO">5</span></div>
-          <div class="meta-item">FOULS <span id="homeFouls">0</span></div>
-        </div>
+        <div class="team-meta"><div class="meta-item">TO <span id="homeTO">2</span></div><div class="meta-item">FOULS <span id="homeFouls">0</span></div></div>
         <div class="special-stats-row">
           <div class="sp-pill">PTO <span id="homePTO">0</span></div>
           <div class="sp-pill">FBP <span id="homeFBP">0</span></div>
@@ -101,7 +86,7 @@
       <div class="vs-block">
         <div class="vs-text">VS</div>
         <div class="clock-wrapper">
-          <div class="clock-display" id="clockDisplay">12:00</div>
+          <div class="clock-display" id="clockDisplay">10:00</div>
           <div class="clock-status" id="clockStatus">READY</div>
           <div class="clock-controls">
             <button class="clock-btn start-btn" id="btnClockStart">▶ START</button>
@@ -110,58 +95,23 @@
           </div>
           <div class="clock-set-row">
             <span class="clock-set-label">SET MIN</span>
-            <button class="clock-set-btn active-set" data-mins="12">12</button>
-            <button class="clock-set-btn" data-mins="10">10</button>
-            <button class="clock-set-btn" data-mins="5">5</button>
-            <button class="clock-set-btn" data-mins="2">2</button>
+            <input class="clock-min-input" id="clockMinInput" type="number" min="1" max="60" value="10" title="Enter minutes"/>
+            <button class="clock-set-apply" id="clockSetApply">SET</button>
           </div>
         </div>
         <button class="undo-btn" id="btnUndo">↩ UNDO</button>
       </div>
 
       <div class="team-score-block away">
-        <button class="team-name-btn" id="awayNameBtn">
-          <span id="awayNameDisplay">AWAY</span><span class="team-edit-icon">✎</span>
-        </button>
+        <button class="team-name-btn" id="awayNameBtn"><span id="awayNameDisplay">AWAY</span><span class="team-edit-icon">✎</span></button>
         <div class="score-display" id="awayScore">0</div>
         <div class="stat-groups-row">
-          <div class="stat-group">
-            <div class="stat-group-label">PTO</div>
-            <div class="stat-group-btns">
-              <button class="sg-btn" data-team="away" data-action="pto2">2</button>
-              <button class="sg-btn" data-team="away" data-action="pto3">3</button>
-            </div>
-            <div class="stat-group-count" id="awayPTOCount">0</div>
-          </div>
-          <div class="stat-group">
-            <div class="stat-group-label">FBP</div>
-            <div class="stat-group-btns">
-              <button class="sg-btn" data-team="away" data-action="fbp2">2</button>
-              <button class="sg-btn" data-team="away" data-action="fbp3">3</button>
-            </div>
-            <div class="stat-group-count" id="awayFBPCount">0</div>
-          </div>
-          <div class="stat-group">
-            <div class="stat-group-label">2CP</div>
-            <div class="stat-group-btns">
-              <button class="sg-btn" data-team="away" data-action="2cp2">2</button>
-              <button class="sg-btn" data-team="away" data-action="2cp3">3</button>
-            </div>
-            <div class="stat-group-count" id="away2CPCount">0</div>
-          </div>
-          <div class="stat-group">
-            <div class="stat-group-label">FBTO</div>
-            <div class="stat-group-btns">
-              <button class="sg-btn" data-team="away" data-action="fbto2">2</button>
-              <button class="sg-btn" data-team="away" data-action="fbto3">3</button>
-            </div>
-            <div class="stat-group-count" id="awayFBTOCount">0</div>
-          </div>
+          <div class="stat-group"><div class="stat-group-label">PTO</div><div class="stat-group-btns"><button class="sg-btn" data-team="away" data-action="pto2">2</button><button class="sg-btn" data-team="away" data-action="pto3">3</button></div><div class="stat-group-count" id="awayPTOCount">0</div></div>
+          <div class="stat-group"><div class="stat-group-label">FBP</div><div class="stat-group-btns"><button class="sg-btn" data-team="away" data-action="fbp2">2</button><button class="sg-btn" data-team="away" data-action="fbp3">3</button></div><div class="stat-group-count" id="awayFBPCount">0</div></div>
+          <div class="stat-group"><div class="stat-group-label">2CP</div><div class="stat-group-btns"><button class="sg-btn" data-team="away" data-action="2cp2">2</button><button class="sg-btn" data-team="away" data-action="2cp3">3</button></div><div class="stat-group-count" id="away2CPCount">0</div></div>
+          <div class="stat-group"><div class="stat-group-label">FBTO</div><div class="stat-group-btns"><button class="sg-btn" data-team="away" data-action="fbto2">2</button><button class="sg-btn" data-team="away" data-action="fbto3">3</button></div><div class="stat-group-count" id="awayFBTOCount">0</div></div>
         </div>
-        <div class="team-meta">
-          <div class="meta-item">TO <span id="awayTO">5</span></div>
-          <div class="meta-item">FOULS <span id="awayFouls">0</span></div>
-        </div>
+        <div class="team-meta"><div class="meta-item">TO <span id="awayTO">2</span></div><div class="meta-item">FOULS <span id="awayFouls">0</span></div></div>
         <div class="special-stats-row">
           <div class="sp-pill">PTO <span id="awayPTO">0</span></div>
           <div class="sp-pill">FBP <span id="awayFBP">0</span></div>
@@ -173,13 +123,7 @@
 
     <div class="main-body">
       <div class="roster-panel home">
-        <div class="panel-header">
-          <span>HOME ROSTER</span>
-          <div class="panel-header-actions">
-            <span class="roster-count" id="homeCount">0</span>
-            <button class="manage-btn" id="manageHomeBtn">⚙ MANAGE</button>
-          </div>
-        </div>
+        <div class="panel-header"><span>HOME ROSTER</span><div class="panel-header-actions"><span class="roster-count" id="homeCount">0</span><button class="manage-btn" id="manageHomeBtn">⚙ MANAGE</button></div></div>
         <div class="starting5-label"><span>⭐ STARTING 5</span><span class="on-court-count" id="homeOnCourtCount">0/5</span></div>
         <div class="player-list" id="homeStarting"></div>
         <div class="bench-label"><span>🪑 BENCH</span><span class="bench-count" id="homeBenchCount">0</span></div>
@@ -191,19 +135,24 @@
         <div class="action-panel">
           <div class="action-header">RECORD ACTION — <span class="selected-player-badge" id="selectedLabel">select a player</span></div>
           <div class="action-grid">
-            <button class="act-btn made"    data-action="2pm">2<br><small>2PT Made</small></button>
-            <button class="act-btn miss"    data-action="2pm_miss">✕<br><small>2PT Miss</small></button>
-            <button class="act-btn made"    data-action="3pm">3<br><small>3PT Made</small></button>
-            <button class="act-btn miss"    data-action="3pm_miss">✕<br><small>3PT Miss</small></button>
-            <button class="act-btn made"    data-action="ftm">FT<br><small>FT Made</small></button>
-            <button class="act-btn miss"    data-action="ftm_miss">✕<br><small>FT Miss</small></button>
+            <button class="act-btn made" data-action="2pm">2<br><small>2PT Made</small></button>
+            <button class="act-btn miss" data-action="2pm_miss">✕<br><small>2PT Miss</small></button>
+            <button class="act-btn made" data-action="3pm">3<br><small>3PT Made</small></button>
+            <button class="act-btn miss" data-action="3pm_miss">✕<br><small>3PT Miss</small></button>
+            <button class="act-btn made" data-action="ftm">FT<br><small>FT Made</small></button>
+            <button class="act-btn miss" data-action="ftm_miss">✕<br><small>FT Miss</small></button>
             <button class="act-btn neutral" data-action="reb_off">OR<br><small>Off. Reb</small></button>
             <button class="act-btn neutral" data-action="reb_def">DR<br><small>Def. Reb</small></button>
-            <button class="act-btn blue"    data-action="ast">A<br><small>Assist</small></button>
-            <button class="act-btn blue"    data-action="stl">S<br><small>Steal</small></button>
-            <button class="act-btn blue"    data-action="blk">B<br><small>Block</small></button>
-            <button class="act-btn miss"    data-action="to">T<br><small>Turnover</small></button>
-            <button class="act-btn miss"    data-action="foul">F<br><small>Foul</small></button>
+            <button class="act-btn blue" data-action="ast">A<br><small>Assist</small></button>
+            <button class="act-btn blue" data-action="stl">S<br><small>Steal</small></button>
+            <button class="act-btn blue" data-action="blk">B<br><small>Block</small></button>
+            <button class="act-btn miss" data-action="to">T<br><small>Turnover</small></button>
+            <div class="act-foul-label" style="grid-column: span 4;">FOUL</div>
+            <div class="act-foul-3col">
+              <button class="act-btn miss" data-action="foul">F<br><small>Foul</small></button>
+              <button class="act-btn miss" data-action="tf">TF<br><small>Tech Foul</small></button>
+              <button class="act-btn miss" data-action="uf">UF<br><small>Unsp. Foul</small></button>
+            </div>
           </div>
           <div class="timeout-row">
             <button class="timeout-btn home-to" data-team="home">⏱ HOME TIMEOUT</button>
@@ -211,22 +160,10 @@
           </div>
         </div>
         <div class="stats-panel">
-          <div class="stats-header">
-            <span>PLAYER STATS</span>
-            <div class="stats-tabs">
-              <button class="stab active" data-view="home">HOME</button>
-              <button class="stab" data-view="away">AWAY</button>
-              <button class="stab" data-view="both">BOTH</button>
-            </div>
-          </div>
+          <div class="stats-header"><span>PLAYER STATS</span><div class="stats-tabs"><button class="stab active" data-view="home">HOME</button><button class="stab" data-view="away">AWAY</button><button class="stab" data-view="both">BOTH</button></div></div>
           <div class="stats-table-wrap">
             <table class="stats-table">
-              <thead><tr>
-                <th>Player</th><th>POS</th><th>ST</th><th>PTS</th>
-                <th>FGM</th><th>FGA</th><th>3PM</th><th>3PA</th><th>FTM</th><th>FTA</th>
-                <th>OR</th><th>DR</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th>
-                <th>TO</th><th>FLS</th>
-              </tr></thead>
+              <thead><tr><th>Player</th><th>ST</th><th>MIN</th><th>PTS</th><th>FGM</th><th>FGA</th><th>3PM</th><th>3PA</th><th>FTM</th><th>FTA</th><th>OR</th><th>DR</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>TO</th><th>FLS</th><th>TF</th><th>UF</th></tr></thead>
               <tbody id="statsBody"></tbody>
             </table>
           </div>
@@ -238,13 +175,7 @@
       </div>
 
       <div class="roster-panel away">
-        <div class="panel-header">
-          <span>AWAY ROSTER</span>
-          <div class="panel-header-actions">
-            <span class="roster-count" id="awayCount">0</span>
-            <button class="manage-btn" id="manageAwayBtn">⚙ MANAGE</button>
-          </div>
-        </div>
+        <div class="panel-header"><span>AWAY ROSTER</span><div class="panel-header-actions"><span class="roster-count" id="awayCount">0</span><button class="manage-btn" id="manageAwayBtn">⚙ MANAGE</button></div></div>
         <div class="starting5-label"><span>⭐ STARTING 5</span><span class="on-court-count" id="awayOnCourtCount">0/5</span></div>
         <div class="player-list" id="awayStarting"></div>
         <div class="bench-label"><span>🪑 BENCH</span><span class="bench-count" id="awayBenchCount">0</span></div>
@@ -254,9 +185,13 @@
     </div>
   </div>
 
+  <!-- ══ GAMES VIEW ══ -->
   <div class="view" id="view-games">
     <div class="page-header">
-      <div class="page-title">🏀 GAMES</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.8rem;">🏀</span>
+        <div class="page-title">GAMES</div>
+      </div>
       <div class="page-filters">
         <button class="filter-btn active" data-filter="all">ALL</button>
         <button class="filter-btn" data-filter="ongoing">🔴 LIVE</button>
@@ -266,14 +201,19 @@
     <div class="games-grid" id="gamesGrid"><div class="page-loading"><div class="db-spinner"></div><span>Loading...</span></div></div>
   </div>
 
+  <!-- ══ TEAMS VIEW ══ -->
   <div class="view" id="view-teams">
     <div class="page-header">
       <div class="page-title">👥 REGISTERED TEAMS</div>
-      <div id="teamsCount" class="page-subtitle"></div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div id="teamsCount" class="page-subtitle"></div>
+        <button id="addTeamBtn" class="hdr-btn accent-btn">➕ ADD TEAM</button>
+      </div>
     </div>
     <div class="teams-grid" id="teamsGrid"><div class="page-loading"><div class="db-spinner"></div><span>Loading...</span></div></div>
   </div>
 
+  <!-- ══ STANDINGS VIEW ══ -->
   <div class="view" id="view-standings">
     <div class="page-header">
       <div class="page-title">🏆 STANDINGS</div>
@@ -285,118 +225,149 @@
     </div>
     <div class="standings-wrap">
       <table class="standings-table" id="standingsTable">
-        <thead><tr><th>#</th><th>TEAM</th><th>GP</th><th>W</th><th>L</th><th>WIN%</th><th>PF</th><th>PA</th><th>DIFF</th></tr></thead>
-        <tbody id="standingsBody"><tr><td colspan="9" class="standings-loading"><div class="db-spinner" style="margin:0 auto"></div></td></tr></tbody>
+        <thead><tr><th>#</th><th>TEAM</th><th>GP</th><th>W</th><th>L</th><th>WIN%</th><th>PF</th><th>PA</th><th>DIFF</th><th>ACTIONS</th></tr></thead>
+        <tbody id="standingsBody"><tr><td colspan="10" class="standings-loading"><div class="db-spinner" style="margin:0 auto"></div></td></tr></tbody>
       </table>
     </div>
   </div>
 
-  <div class="modal-overlay" id="gameDetailModal">
-    <div class="modal game-detail-modal">
-      <div class="gd-header">
-        <div class="gd-title" id="gdTitle">GAME DETAILS</div>
-        <div class="gd-live-badge" id="gdLiveBadge" style="display:none">🔴 LIVE</div>
-        <button class="ss-close-btn" id="closeGameDetail">✕</button>
-      </div>
-      <div class="gd-scoreboard" id="gdScoreboard"></div>
-      <div class="gd-tabs">
-        <button class="gd-tab active" data-tab="boxscore">BOX SCORE</button>
-        <button class="gd-tab" data-tab="pbp">PLAY BY PLAY</button>
-      </div>
-      <div class="gd-content" id="gdContent"></div>
-      <div class="gd-footer">
-        <button class="modal-btn cancel" id="closeGameDetail2">Close</button>
-        <button class="modal-btn confirm" id="gdLoadBtn" style="display:none">▶ LOAD INTO SCORER</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="teamSetupModal">
+  <!-- ══ TEAM PICKER MODAL ══ -->
+  <div class="modal-overlay" id="teamPickerModal">
     <div class="modal team-setup-modal">
       <div class="ts-header">
-        <div class="ts-title"><span id="tsIcon">🏠</span><span id="tsTitle">SET UP HOME TEAM</span></div>
-        <button class="ss-close-btn" id="closeTeamSetup">✕</button>
-      </div>
-      <div class="ts-name-section">
-        <label class="ts-label">TEAM NAME</label>
-        <div class="ts-name-row">
-          <input type="text" id="tsTeamNameInput" class="ts-name-input" placeholder="e.g. Bulls, Lakers..." maxlength="20"/>
-          <button class="ts-save-name-btn" id="tsSaveNameBtn">SET NAME</button>
-        </div>
+        <div class="ts-title"><span id="tpIcon">🏠</span><span id="tpTitle">SELECT HOME TEAM</span></div>
+        <button class="ss-close-btn" id="closeTeamPicker">✕</button>
       </div>
       <div class="ts-saved-section">
         <div class="ts-saved-header">
-          <span class="ts-label">SAVED TEAMS</span>
-          <span class="ts-saved-hint">Click a team to load their roster</span>
+          <span class="ts-label">AVAILABLE TEAMS</span>
+          <span class="ts-saved-hint">Filtered by selected league</span>
         </div>
-        <div class="ts-saved-list" id="tsSavedList"></div>
+        <div class="ts-saved-list" id="tpTeamList"></div>
       </div>
       <div class="ts-footer">
-        <div class="ts-footer-info">💾 Players auto-save to database</div>
-        <button class="modal-btn cancel" id="closeTeamSetup2">Close</button>
+        <div class="ts-footer-info">💡 Go to TEAMS tab to add or manage teams</div>
+        <button class="modal-btn cancel" id="closeTeamPicker2">Close</button>
       </div>
     </div>
   </div>
 
+  <!-- ══ NEW TEAM MODAL ══ -->
+  <div class="modal-overlay" id="newTeamModal">
+    <div class="modal" style="max-width:420px;width:92vw;padding:28px 32px;text-align:left">
+      <h2 style="font-family:'Bebas Neue',sans-serif;letter-spacing:3px;margin-bottom:18px;font-size:1.4rem;color:var(--accent)">➕ NEW TEAM</h2>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <label style="font-size:.65rem;letter-spacing:2px;color:var(--muted);display:block;margin-bottom:6px;font-family:'Bebas Neue',sans-serif">TEAM NAME</label>
+          <input type="text" id="ntTeamName" placeholder="e.g. Bulls, Lakers..." maxlength="20"
+            style="width:100%;padding:9px 12px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;border-radius:5px;outline:none;box-sizing:border-box"/>
+        </div>
+        <div>
+          <label style="font-size:.65rem;letter-spacing:2px;color:var(--muted);display:block;margin-bottom:6px;font-family:'Bebas Neue',sans-serif">ASSIGN TO LEAGUE (optional)</label>
+          <select id="ntLeagueSelect" style="width:100%;padding:9px 12px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:.9rem;border-radius:5px;outline:none;box-sizing:border-box">
+            <option value="">— No League —</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top:24px">
+        <button class="modal-btn cancel" id="ntCancelBtn">Cancel</button>
+        <button class="modal-btn confirm" id="ntSaveBtn">✓ CREATE TEAM</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MANAGE MODAL ══ -->
   <div class="modal-overlay" id="manageModal">
     <div class="modal manage-modal">
-      <div class="manage-modal-header">
-        <div class="manage-modal-title"><span id="manageModalTeamIcon">🏠</span><span id="manageModalTitle">MANAGE TEAM</span></div>
-        <button class="ss-close-btn" id="closeManageModal">✕</button>
-      </div>
-      <div class="manage-add-section">
-        <div class="manage-add-row">
-          <input type="number" id="managePlayerNum" placeholder="#" min="0" max="99" style="width:54px;"/>
-          <input type="text" id="managePlayerName" placeholder="Player name..." maxlength="20"/>
-          <select id="managePlayerPos"><option>PG</option><option>SG</option><option>SF</option><option>PF</option><option>C</option></select>
-          <button class="icon-btn" id="manageAddPlayer">+ ADD</button>
-        </div>
-      </div>
-      <div class="manage-players-header">
-        <span>SQUAD</span>
-        <span class="manage-starter-hint">Click ⭐ to set as starter (max 5)</span>
-      </div>
+      <div class="manage-modal-header"><div class="manage-modal-title"><span id="manageModalTeamIcon">🏠</span><span id="manageModalTitle">MANAGE TEAM</span></div><button class="ss-close-btn" id="closeManageModal">✕</button></div>
+      <div class="manage-add-section"><div class="manage-add-row"><input type="number" id="managePlayerNum" placeholder="#" min="0" max="99" style="width:54px;"/><input type="text" id="managePlayerName" placeholder="Player name..." maxlength="20"/><select id="managePlayerPos"><option>PG</option><option>SG</option><option>SF</option><option>PF</option><option>C</option></select><button class="icon-btn" id="manageAddPlayer">+ ADD</button></div></div>
+      <div class="manage-players-header"><span>SQUAD</span><span class="manage-starter-hint">Click ⭐ to set as starter (max 5)</span></div>
       <div class="manage-player-list" id="managePlayerList"></div>
-      <div class="manage-footer">
-        <div class="manage-on-court-info">On Court: <strong id="manageOnCourtCount">0</strong> / 5</div>
-        <button class="modal-btn confirm" id="manageConfirmBtn">✓ DONE</button>
-      </div>
+      <div class="manage-footer"><div class="manage-on-court-info">On Court: <strong id="manageOnCourtCount">0</strong> / 5</div><button class="modal-btn confirm" id="manageConfirmBtn">✓ DONE</button></div>
     </div>
   </div>
 
+  <!-- ══ SUBSTITUTION MODAL ══ -->
   <div class="modal-overlay" id="subModal">
     <div class="modal sub-modal">
-      <div class="sub-modal-header">
-        <div class="sub-modal-title"><span id="subModalIcon">🔄</span><span id="subModalTitle">SUBSTITUTION</span></div>
-        <button class="ss-close-btn" id="closeSubModal">✕</button>
-      </div>
+      <div class="sub-modal-header"><div class="sub-modal-title"><span id="subModalIcon">🔄</span><span id="subModalTitle">SUBSTITUTION</span></div><button class="ss-close-btn" id="closeSubModal">✕</button></div>
       <div class="sub-body">
-        <div class="sub-col">
-          <div class="sub-col-header out-header">⬆ GOING OUT <span class="sub-hint">(on court)</span></div>
-          <div class="sub-player-list" id="subOutList"></div>
-        </div>
+        <div class="sub-col"><div class="sub-col-header out-header">⬆ GOING OUT <span class="sub-hint">(on court)</span></div><div class="sub-player-list" id="subOutList"></div></div>
         <div class="sub-arrow">⇄</div>
-        <div class="sub-col">
-          <div class="sub-col-header in-header">⬇ COMING IN <span class="sub-hint">(bench)</span></div>
-          <div class="sub-player-list" id="subInList"></div>
+        <div class="sub-col"><div class="sub-col-header in-header">⬇ COMING IN <span class="sub-hint">(bench)</span></div><div class="sub-player-list" id="subInList"></div></div>
+      </div>
+      <div class="sub-selection-display"><div class="sub-sel-block"><span class="sub-sel-label">OUT</span><span class="sub-sel-name" id="subOutName">—</span></div><div class="sub-sel-arrow">⇄</div><div class="sub-sel-block"><span class="sub-sel-label">IN</span><span class="sub-sel-name" id="subInName">—</span></div></div>
+      <div class="sub-footer"><button class="modal-btn cancel" id="closeSubModal2">Cancel</button><button class="modal-btn confirm" id="confirmSubBtn" disabled>✓ CONFIRM SUB</button></div>
+    </div>
+  </div>
+
+  <!-- ══ TEAM MANAGER MODAL ══ -->
+  <div class="modal-overlay" id="teamManagerModal">
+    <div class="modal team-manager-modal">
+      <div class="tm-header">
+        <div class="tm-title-wrap">
+          <div class="tm-team-name-display" id="tmTeamNameDisplay">TEAM</div>
+          <div class="tm-subtitle">TEAM MANAGER</div>
+        </div>
+        <button class="ss-close-btn" id="closeTeamManager">✕</button>
+      </div>
+      <div class="tm-section">
+        <div class="tm-section-label">✏ RENAME TEAM & ASSIGN LEAGUE</div>
+        <div class="tm-form-row" style="margin-bottom:8px">
+          <input type="text" id="tmRenameInput" class="tm-input tm-flex" placeholder="New team name..." maxlength="20"/>
+        </div>
+        <div class="tm-form-row">
+          <select id="tmLeagueSelect" class="tm-select" style="flex:1"><option value="">— No League —</option></select>
+          <button class="tm-btn tm-btn-accent" id="tmRenameBtn">SAVE</button>
+          <button class="tm-btn tm-btn-danger" id="tmDeleteTeamBtn">🗑 DELETE</button>
         </div>
       </div>
-      <div class="sub-selection-display">
-        <div class="sub-sel-block"><span class="sub-sel-label">OUT</span><span class="sub-sel-name" id="subOutName">—</span></div>
-        <div class="sub-sel-arrow">⇄</div>
-        <div class="sub-sel-block"><span class="sub-sel-label">IN</span><span class="sub-sel-name" id="subInName">—</span></div>
+      <div class="tm-section">
+        <div class="tm-section-label">➕ ADD PLAYER</div>
+        <div class="tm-form-row">
+          <input type="number" id="tmPlayerNum" placeholder="#" min="0" max="99" class="tm-num-input"/>
+          <input type="text" id="tmPlayerName" placeholder="Player name..." maxlength="20" class="tm-input tm-flex"/>
+          <select id="tmPlayerPos" class="tm-select"><option>PG</option><option>SG</option><option>SF</option><option>PF</option><option>C</option></select>
+          <button class="tm-btn tm-btn-add" id="tmAddPlayerBtn">+ ADD</button>
+        </div>
       </div>
-      <div class="sub-footer">
-        <button class="modal-btn cancel" id="closeSubModal2">Cancel</button>
-        <button class="modal-btn confirm" id="confirmSubBtn" disabled>✓ CONFIRM SUB</button>
+      <div class="tm-edit-bar" id="tmEditBar" style="display:none">
+        <div class="tm-section-label" style="color:var(--accent)">✎ EDITING PLAYER</div>
+        <div class="tm-form-row">
+          <input type="number" id="tmEditNum" placeholder="#" min="0" max="99" class="tm-num-input"/>
+          <input type="text" id="tmEditName" placeholder="Name..." maxlength="20" class="tm-input tm-flex"/>
+          <select id="tmEditPos" class="tm-select"><option>PG</option><option>SG</option><option>SF</option><option>PF</option><option>C</option></select>
+          <button class="tm-btn tm-btn-accent" id="tmSaveEditBtn">✓ UPDATE</button>
+          <button class="tm-btn tm-btn-cancel" id="tmCancelEditBtn">✕</button>
+        </div>
+      </div>
+      <div class="tm-players-header">
+        <span class="tm-section-label" style="margin:0">ROSTER</span>
+        <span class="tm-player-count" id="tmPlayerCount">0 players</span>
+      </div>
+      <div class="tm-player-list" id="tmPlayerList"><div class="tm-empty">No players yet. Add one above!</div></div>
+      <div class="tm-footer">
+        <div class="tm-footer-note">💾 Changes save directly to database</div>
+        <button class="modal-btn cancel" id="closeTeamManager2">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- FIBA SCORESHEET -->
+  <!-- ══ GAME DETAIL MODAL ══ -->
+  <div class="modal-overlay" id="gameDetailModal">
+    <div class="modal game-detail-modal">
+      <div class="gd-header"><div class="gd-title" id="gdTitle">GAME DETAILS</div><div class="gd-live-badge" id="gdLiveBadge" style="display:none">🔴 LIVE</div><button class="ss-close-btn" id="closeGameDetail">✕</button></div>
+      <div class="gd-scoreboard" id="gdScoreboard"></div>
+      <div class="gd-tabs"><button class="gd-tab active" data-tab="boxscore">BOX SCORE</button><button class="gd-tab" data-tab="pbp">PLAY BY PLAY</button></div>
+      <div class="gd-content" id="gdContent"></div>
+      <div class="gd-footer"><button class="modal-btn cancel" id="closeGameDetail2">Close</button><button class="modal-btn confirm" id="gdLoadBtn" style="display:none">▶ LOAD INTO SCORER</button></div>
+    </div>
+  </div>
+
+  <!-- ══ FIBA SCORESHEET ══ -->
   <div class="modal-overlay" id="scoresheetModal">
     <div class="modal scoresheet-modal">
-      <div class="ss-header">
+      <div class="ss-header no-print-header">
         <div class="ss-fiba">🏀 FIBA OCEANIA</div>
         <div class="ss-title-block">
           <div class="ss-org">FEDERATION INTERNATIONALE DE BASKETBALL</div>
@@ -413,6 +384,13 @@
         </div>
         <div class="ss-meta-row">
           <div class="ss-field"><label>Competition</label><input class="ss-input" id="ssCompetition"/></div>
+          <div class="ss-field ss-league-field">
+            <label>LEAGUE / DIVISION</label>
+            <div class="ss-league-row">
+              <select class="ss-input ss-league-select" id="ssLeagueSelect"><option value="">— Select League —</option></select>
+              <button class="ss-league-btn" id="ssLeagueManageBtn" title="Manage leagues">⚙</button>
+            </div>
+          </div>
           <div class="ss-field"><label>Date</label><input class="ss-input" id="ssDate" type="date"/></div>
           <div class="ss-field"><label>Time</label><input class="ss-input" id="ssTime" type="time"/></div>
           <div class="ss-field"><label>Game No.</label><input class="ss-input" id="ssGameNo"/></div>
@@ -426,10 +404,7 @@
           <div class="ss-team-block">
             <div class="ss-team-label home-color">Team A — <strong id="ssRosterTeamA">HOME</strong></div>
             <div class="ss-to-row">
-              <div class="ss-to-col"><span class="ss-tiny">Time-outs</span>
-                <div class="ss-to-line"><span>1st Half</span><div class="ss-to-boxes" id="ssHomeTO1"></div></div>
-                <div class="ss-to-line"><span>2nd Half</span><div class="ss-to-boxes" id="ssHomeTO2"></div></div>
-              </div>
+              <div class="ss-to-col"><span class="ss-tiny">Time-outs</span><div class="ss-to-line"><span>1st Half</span><div class="ss-to-boxes" id="ssHomeTO1"></div></div><div class="ss-to-line"><span>2nd Half</span><div class="ss-to-boxes" id="ssHomeTO2"></div></div></div>
               <div class="ss-tf-col"><span class="ss-tiny">Team Fouls</span><div class="ss-foul-grid" id="ssHomeFoulBoxes"></div></div>
             </div>
             <table class="ss-roster-table"><thead><tr><th>No.</th><th>Players</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody id="ssHomeRosterBody"></tbody></table>
@@ -438,10 +413,7 @@
           <div class="ss-team-block">
             <div class="ss-team-label away-color">Team B — <strong id="ssRosterTeamB">AWAY</strong></div>
             <div class="ss-to-row">
-              <div class="ss-to-col"><span class="ss-tiny">Time-outs</span>
-                <div class="ss-to-line"><span>1st Half</span><div class="ss-to-boxes" id="ssAwayTO1"></div></div>
-                <div class="ss-to-line"><span>2nd Half</span><div class="ss-to-boxes" id="ssAwayTO2"></div></div>
-              </div>
+              <div class="ss-to-col"><span class="ss-tiny">Time-outs</span><div class="ss-to-line"><span>1st Half</span><div class="ss-to-boxes" id="ssAwayTO1"></div></div><div class="ss-to-line"><span>2nd Half</span><div class="ss-to-boxes" id="ssAwayTO2"></div></div></div>
               <div class="ss-tf-col"><span class="ss-tiny">Team Fouls</span><div class="ss-foul-grid" id="ssAwayFoulBoxes"></div></div>
             </div>
             <table class="ss-roster-table"><thead><tr><th>No.</th><th>Players</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody id="ssAwayRosterBody"></tbody></table>
@@ -463,7 +435,7 @@
                 <tr class="ss-final-row"><td colspan="2"><strong>Final Score</strong></td><td id="ssFinalA"><strong>—</strong></td><td id="ssFinalB"><strong>—</strong></td></tr>
               </tbody>
             </table>
-            <div class="ss-winner">Name of winning team: <strong id="ssWinner" class="ss-winner-name">—</strong></div>
+            <div class="ss-winner">Winning team: <strong id="ssWinner" class="ss-winner-name">—</strong></div>
           </div>
           <div class="ss-team-stats-block">
             <div class="ss-team-stats-title">TEAM STATISTICS</div>
@@ -473,8 +445,17 @@
                 <tr><td class="ss-ts-label">Points from Turnovers</td><td class="ss-ts-a" id="ssStatPtoA">0</td><td class="ss-ts-b" id="ssStatPtoB">0</td></tr>
                 <tr><td class="ss-ts-label">Second Chance Points</td><td class="ss-ts-a" id="ssStatScpA">0</td><td class="ss-ts-b" id="ssStatScpB">0</td></tr>
                 <tr><td class="ss-ts-label">Fast Break Points</td><td class="ss-ts-a" id="ssStatFbpA">0</td><td class="ss-ts-b" id="ssStatFbpB">0</td></tr>
-                <tr><td class="ss-ts-label">Fast Break Pts from Turnovers</td><td class="ss-ts-a" id="ssStatFbtoA">0</td><td class="ss-ts-b" id="ssStatFbtoB">0</td></tr>
+                <tr><td class="ss-ts-label">Fast Break Pts from TO</td><td class="ss-ts-a" id="ssStatFbtoA">0</td><td class="ss-ts-b" id="ssStatFbtoB">0</td></tr>
                 <tr><td class="ss-ts-label">Bench Points</td><td class="ss-ts-a" id="ssStatBenchA">0</td><td class="ss-ts-b" id="ssStatBenchB">0</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="ss-team-stats-block">
+            <div class="ss-team-stats-title">GAME SUMMARY</div>
+            <table class="ss-team-stats-table">
+              <thead><tr><th class="ss-ts-label">STAT</th><th class="ss-ts-a">TEAM A</th><th class="ss-ts-b">TEAM B</th></tr></thead>
+              <tbody>
+                <tr><td class="ss-ts-label">Biggest Lead</td><td class="ss-ts-a" id="ssGsBigLeadA">—</td><td class="ss-ts-b" id="ssGsBigLeadB">—</td></tr>
               </tbody>
             </table>
           </div>
@@ -483,29 +464,68 @@
           <div class="ss-rs-title">RUNNING SCORE</div>
           <div class="ss-rs-wrap">
             <table class="ss-rs-table">
-              <thead>
-                <tr>
-                  <th class="rs-head-a">A</th><th class="rs-head-num"></th><th class="rs-head-b">B</th>
-                  <th class="rs-divider"></th>
-                  <th class="rs-head-a">A</th><th class="rs-head-num"></th><th class="rs-head-b">B</th>
-                  <th class="rs-divider"></th>
-                  <th class="rs-head-a">A</th><th class="rs-head-num"></th><th class="rs-head-b">B</th>
-                  <th class="rs-divider"></th>
-                  <th class="rs-head-a">A</th><th class="rs-head-num"></th><th class="rs-head-b">B</th>
-                </tr>
-              </thead>
+              <thead><tr>
+                <th class="rs-head-a">A</th><th class="rs-head-num-a"></th><th class="rs-head-num-b"></th><th class="rs-head-b">B</th>
+                <th class="rs-divider"></th>
+                <th class="rs-head-a">A</th><th class="rs-head-num-a"></th><th class="rs-head-num-b"></th><th class="rs-head-b">B</th>
+                <th class="rs-divider"></th>
+                <th class="rs-head-a">A</th><th class="rs-head-num-a"></th><th class="rs-head-num-b"></th><th class="rs-head-b">B</th>
+                <th class="rs-divider"></th>
+                <th class="rs-head-a">A</th><th class="rs-head-num-a"></th><th class="rs-head-num-b"></th><th class="rs-head-b">B</th>
+              </tr></thead>
               <tbody id="ssRunningBody"></tbody>
             </table>
           </div>
         </div>
       </div>
-      <div class="ss-footer">
+      <div class="ss-footer no-print-footer">
         <button class="modal-btn confirm" id="btnPrintScoresheet">🖨 Print</button>
         <button class="modal-btn cancel" id="closeScoresheetModal2">Close</button>
       </div>
     </div>
   </div>
 
+  <!-- ══ LEAGUE MANAGER MODAL ══ -->
+  <div class="modal-overlay" id="leagueManagerModal">
+    <div class="modal league-manager-modal">
+      <div class="lm-header">
+        <div class="lm-title">🏆 LEAGUE / DIVISION MANAGER</div>
+        <button class="ss-close-btn" id="closeLeagueManager">✕</button>
+      </div>
+      <div class="lm-add-section">
+        <div class="lm-section-label">ADD NEW LEAGUE</div>
+        <div class="lm-add-row">
+          <input type="text" id="lmNameInput" class="lm-input lm-flex" placeholder="e.g. Under 21, Senior Open…" maxlength="60"/>
+          <select id="lmCategoryInput" class="lm-select">
+            <option value="Mens u10">Mens u10</option>
+            <option value="Mens u11">Mens u11</option>
+            <option value="Mens u12">Mens u12</option>
+            <option value="Mens u13">Mens u13</option>
+            <option value="Mens u14">Mens u14</option>
+            <option value="Mens u15">Mens u15</option>
+            <option value="Mens u16">Mens u16</option>
+            <option value="Mens u17">Mens u17</option>
+            <option value="Mens u18">Mens u18</option>
+            <option value="Mens u19">Mens u19</option>
+            <option value="Womens u17">Womens u17</option>
+            <option value="Womens u25">Womens u25</option>
+          </select>
+          <button class="lm-btn lm-btn-add" id="lmAddBtn">+ ADD</button>
+        </div>
+      </div>
+      <div class="lm-list-header">
+        <span class="lm-section-label" style="margin:0">LEAGUES</span>
+        <span class="lm-count" id="lmCount">0</span>
+      </div>
+      <div class="lm-list" id="lmList"><div class="lm-empty">No leagues yet. Add one above!</div></div>
+      <div class="lm-footer">
+        <div class="lm-footer-note">💾 Saved to Supabase database</div>
+        <button class="modal-btn cancel" id="closeLeagueManager2">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ NEW GAME CONFIRM ══ -->
   <div class="modal-overlay" id="newGameModal">
     <div class="modal">
       <div class="modal-icon">🏀</div>
@@ -518,6 +538,45 @@
     </div>
   </div>
 
-  <script src="app.js?v=3"></script>
+  <!-- ══ END GAME CONFIRM ══ -->
+  <div class="modal-overlay" id="endGameModal">
+    <div class="modal">
+      <div class="modal-icon">🏁</div>
+      <h2>End Game?</h2>
+      <p id="endGameSummary" style="font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:6px"></p>
+      <p>This will mark the game as finished and update the standings.</p>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="cancelEndGame">Cancel</button>
+        <button class="modal-btn confirm" id="confirmEndGame">🏁 END GAME</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CACHE BUSTER — keeps app always fresh ══ -->
+  <script>
+    // Unregister any old service workers so stale SW never serves old files
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(reg => reg.unregister());
+      });
+    }
+    // Clear all caches on every load
+    if ('caches' in window) {
+      caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+    }
+  </script>
+
+  <!-- ══ APP SCRIPT — cache-busted with hourly timestamp ══ -->
+  <script>
+    (function() {
+      // Changes every hour — forces fresh download without manual version bumps
+      const v = Math.floor(Date.now() / (1000 * 60 * 60));
+      const s = document.createElement('script');
+      s.src = 'app.js?v=' + v;
+      s.defer = false;
+      document.currentScript.parentNode.appendChild(s);
+    })();
+  </script>
+
 </body>
 </html>

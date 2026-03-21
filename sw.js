@@ -1,65 +1,70 @@
-/* ═══════════════════════════════════════
-   HOOPS — Service Worker (PWA)
-═══════════════════════════════════════ */
+// sw.js — Service Worker with aggressive cache busting
+// Place this file in your ROOT directory (same folder as index.html)
+// This REPLACES your existing sw.js if you have one
 
-const CACHE_NAME = 'hoops-v1';
-const ASSETS = [
+const CACHE_VERSION = 'hoops-v' + Date.now(); // unique every deploy
+const STATIC_CACHE  = CACHE_VERSION;
+
+// Files to cache for offline use
+const PRECACHE_URLS = [
   '/',
   '/index.html',
-  '/style.css',
   '/app.js',
-  '/manifest.json',
-  'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&family=Barlow:wght@300;400;500&display=swap',
+  '/style.css',
 ];
 
-// Install — cache all static assets
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS).catch(err => {
-        console.warn('Cache addAll partial failure:', err);
-      });
-    })
-  );
+// ── Install: cache fresh copies ──
+self.addEventListener('install', event => {
+  // Skip waiting forces the new SW to activate immediately
   self.skipWaiting();
-});
-
-// Activate — clean old caches
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then(cache => cache.addAll(PRECACHE_URLS)).catch(() => {})
   );
-  self.clients.claim();
 });
 
-// Fetch — network first for API calls, cache first for assets
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
-
-  // Always network for Supabase API
-  if (url.hostname.includes('supabase.co')) {
-    e.respondWith(
-      fetch(e.request).catch(() =>
-        new Response(JSON.stringify({ error: 'Offline' }), {
-          headers: { 'Content-Type': 'application/json' }
-        })
+// ── Activate: delete ALL old caches immediately ──
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys
+          .filter(key => key !== STATIC_CACHE)
+          .map(key => {
+            console.log('[SW] Deleting old cache:', key);
+            return caches.delete(key);
+          })
       )
+    ).then(() => self.clients.claim()) // take control of all open tabs immediately
+  );
+});
+
+// ── Fetch: Network-first strategy for JS/CSS, cache fallback ──
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  // Always go network-first for your app files (never serve stale JS/CSS)
+  if (
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css') ||
+    url.pathname.endsWith('.html') ||
+    url.pathname === '/'
+  ) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then(response => {
+          // Clone and store fresh copy
+          const clone = response.clone();
+          caches.open(STATIC_CACHE).then(cache => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => {
+          // Network failed — fall back to cache
+          return caches.match(event.request);
+        })
     );
     return;
   }
 
-  // Cache first for static assets
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(res => {
-        if (!res || res.status !== 200 || res.type === 'opaque') return res;
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
-        return res;
-      }).catch(() => caches.match('/index.html'));
-    })
-  );
+  // For everything else (fonts, images, API calls) — network only
+  event.respondWith(fetch(event.request));
 });
