@@ -424,6 +424,7 @@ async function saveGameToDB() {
           on_court:p.onCourt, pts:p.pts, fgm:p.fgm, fga:p.fga, tpm:p.tpm, tpa:p.tpa,
           ftm:p.ftm, fta:p.fta, off_reb:p.or, def_reb:p.dr, ast:p.ast, stl:p.stl,
           blk:p.blk, turnovers:p.to, fouls:p.fls, pto:p.pto||0, fbp:p.fbp||0, twocp:p.twocp||0, fbto:p.fbto||0,
+          secs:p.secs||0,
         }, { 'id':`eq.${p.dbStatId}` });
       }
     }
@@ -472,6 +473,8 @@ $('btnStartGame').addEventListener('click', async () => {
   if (state.currentGameId) { toast('Game already started!'); return; }
   showLoading('Starting game...');
   try {
+    state.home.players.forEach(p=>{ p.isStarter=p.onCourt; });
+    state.away.players.forEach(p=>{ p.isStarter=p.onCourt; });
     await createGame();
     startClock();
     updateGameButtons();
@@ -494,6 +497,8 @@ $('endGameModal').addEventListener('click', e => { if (e.target === $('endGameMo
 
 $('confirmEndGame').addEventListener('click', async () => {
   $('endGameModal').classList.remove('visible');
+  clearTimeout(saveGameTimer);
+  await saveGameToDB();
   showLoading('Ending game...');
   try {
     const hs = state.home.score, as = state.away.score;
@@ -617,7 +622,7 @@ async function loadTeamIntoScorer(teamDbId, name, players) {
   state[team].name=name; state[team].dbId=teamDbId;
   state[team].players=players.map(p=>mkPlayer(p));
   // Auto-set first 5 as starters
-  state[team].players.forEach((p,i)=>{ p.onCourt=i<5; });
+  state[team].players.forEach(p=>{ p.onCourt=false; });
   updateTeamNameDisplay(team);
   renderRoster('home'); renderRoster('away'); renderStats();
   toast(`✓ ${name} loaded`);
@@ -791,14 +796,20 @@ function buildGameCard(g) {
         const gData = games[0];
         const winnerId = hs > as ? gData.home_team_id : as > hs ? gData.away_team_id : null;
  
+       clearTimeout(saveGameTimer);
+        await saveGameToDB();
         await db.update('games', {
           status: 'finished',
           winner_team_id: winnerId,
           home_score: hs,
           away_score: as,
+          home_pto: gData.home_pto||0, home_fbp: gData.home_fbp||0,
+          home_twocp: gData.home_twocp||0, home_fbto: gData.home_fbto||0,
+          away_pto: gData.away_pto||0, away_fbp: gData.away_fbp||0,
+          away_twocp: gData.away_twocp||0, away_fbto: gData.away_fbto||0,
+          home_fouls: gData.home_fouls||0, away_fouls: gData.away_fouls||0,
           updated_at: new Date().toISOString()
         }, { 'id': `eq.${btn.dataset.id}` });
- 
         toast(`🏁 Game ended! ${winner !== 'TIE' ? winner + ' wins!' : "It's a tie!"}`);
         loadGames(currentGamesFilter);
         loadStandings(currentGamesSort);
@@ -867,13 +878,19 @@ $('gdLoadBtn').addEventListener('click', async()=>{
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelector('[data-view="scorer"]').classList.add('active');
   $('view-scorer').classList.add('active');
+  // For finished games, show print options immediately
+  const games = await db.select('games',{'id':`eq.${currentGameDetailId}`,'select':'status'});
+  if(games[0]?.status === 'finished'){
+    toast('✅ Game loaded — use PDF or 📋 Scoresheet to print');
+  }
 });
 
 async function openGameDetail(gameId, isLive) {
   currentGameDetailId=gameId;
   $('gdLiveBadge').style.display=isLive?'block':'none';
-  $('gdLoadBtn').style.display=isLive?'block':'none';
-  $('gdTitle').textContent=isLive?'🔴 LIVE GAME':'GAME DETAILS';
+  $('gdLoadBtn').style.display='block';
+$('gdLoadBtn').textContent=isLive?'▶ LOAD INTO SCORER':'📋 VIEW & PRINT';
+$('gdTitle').textContent=isLive?'🔴 LIVE GAME':'GAME DETAILS';
   $('gdContent').innerHTML=`<div class="page-loading"><div class="db-spinner"></div></div>`;
   showLoading('Loading game...');
   try {
@@ -920,21 +937,196 @@ async function loadGameIntoScorerFromDB(gameId) {
     const games=await db.select('games',{'id':`eq.${gameId}`,'select':'*'});
     if(!games.length) return;
     const g=games[0];
-    if(g.home_team_id){ const hp=await loadPlayersFromDB(g.home_team_id); state.home.name=g.home_name||'HOME'; state.home.dbId=g.home_team_id; state.home.score=g.home_score||0; state.home.fouls=g.home_fouls||0; state.home.timeouts=g.home_timeouts??5; state.home.players=hp.map(p=>mkPlayer(p)); }
-    if(g.away_team_id){ const ap=await loadPlayersFromDB(g.away_team_id); state.away.name=g.away_name||'AWAY'; state.away.dbId=g.away_team_id; state.away.score=g.away_score||0; state.away.fouls=g.away_fouls||0; state.away.timeouts=g.away_timeouts??5; state.away.players=ap.map(p=>mkPlayer(p)); }
-    state.currentGameId=gameId; state.quarter=g.quarter||'1';
-    viewerMode=g.status==='ongoing';
+
+    // Load players and build roster
+    if(g.home_team_id){
+      const hp=await loadPlayersFromDB(g.home_team_id);
+      state.home.name=g.home_name||'HOME'; state.home.dbId=g.home_team_id;
+      state.home.score=g.home_score||0; state.home.fouls=g.home_fouls||0;
+      state.home.timeouts=g.home_timeouts??5;
+      state.home.pto=g.home_pto||0; state.home.fbp=g.home_fbp||0;
+      state.home.twocp=g.home_twocp||0; state.home.fbto=g.home_fbto||0;
+      // restore stat group counts to display in the scoreboard pills
+      state.home.ptoCount=g.home_pto||0; state.home.fbpCount=g.home_fbp||0;
+      state.home.twocpCount=g.home_twocp||0; state.home.fbtoCount=g.home_fbto||0;
+      state.home.players=hp.map(p=>mkPlayer(p));
+    }
+    if(g.away_team_id){
+      const ap=await loadPlayersFromDB(g.away_team_id);
+      state.away.name=g.away_name||'AWAY'; state.away.dbId=g.away_team_id;
+      state.away.score=g.away_score||0; state.away.fouls=g.away_fouls||0;
+      state.away.timeouts=g.away_timeouts??5;
+      state.away.pto=g.away_pto||0; state.away.fbp=g.away_fbp||0;
+      state.away.twocp=g.away_twocp||0; state.away.fbto=g.away_fbto||0;
+      // restore stat group counts to display in the scoreboard pills
+      state.away.ptoCount=g.away_pto||0; state.away.fbpCount=g.away_fbp||0;
+      state.away.twocpCount=g.away_twocp||0; state.away.fbtoCount=g.away_fbto||0;
+      state.away.players=ap.map(p=>mkPlayer(p));
+    }
+  // ── Load all plays first ──
+    const savedPlays=await db.select('plays',{
+      'game_id':`eq.${gameId}`,
+      'select':'*',
+      'order':'created_at.asc'
+    });
+
+    // ── Reset all player stats to zero ──
+    for(const t of ['home','away']){
+      state[t].fouls=0;
+      state[t].players.forEach(p=>{
+        p.pts=0;p.fgm=0;p.fga=0;p.tpm=0;p.tpa=0;
+        p.ftm=0;p.fta=0;p.or=0;p.dr=0;
+        p.ast=0;p.stl=0;p.blk=0;p.to=0;
+        p.fls=0;p.tf=0;p.uf=0;p.onCourt=false;
+      });
+    }
+
+    // ── Set starters from game_stats on_court field ──
+    const savedStats=await db.select('game_stats',{'game_id':`eq.${gameId}`,'select':'player_id,on_court,id,secs'});
+    savedStats.forEach(s=>{
+      for(const t of ['home','away']){
+        const p=state[t].players.find(x=>x.dbId===s.player_id);
+        if(p){ p.onCourt=s.on_court||false; p.dbStatId=s.id; p.secs=s.secs||0; }
+      }
+    });
+    // fallback: if nobody set as on_court, use first 5
+    if(!state.home.players.some(p=>p.onCourt)) state.home.players.forEach((p,i)=>{ p.onCourt=i<5; });
+    if(!state.away.players.some(p=>p.onCourt)) state.away.players.forEach((p,i)=>{ p.onCourt=i<5; });
+
+    // ── Rebuild ALL stats by replaying every play ──
+    savedPlays.forEach(play=>{
+      if(!play.player_id) return;
+      let player=null, team=null;
+      for(const t of ['home','away']){
+        const found=state[t].players.find(x=>String(x.dbId)===String(play.player_id));
+        if(found){ player=found; team=t; break; }
+      }
+      const desc=play.description||'';
+      // ── Team special stats (no player_id) ──
+     if(!player||!team) return;
+      if     (desc.includes('2PT Made'))                              { player.fgm++;player.fga++;player.pts+=2; }
+      else if(desc.includes('2PT Miss'))                              { player.fga++; }
+      else if(desc.includes('3PT Made'))                              { player.tpm++;player.tpa++;player.fgm++;player.fga++;player.pts+=3; }
+      else if(desc.includes('3PT Miss'))                              { player.tpa++;player.fga++; }
+      else if(desc.includes('Free Throw')&&!desc.includes('Miss'))   { player.ftm++;player.fta++;player.pts+=1; }
+      else if(desc.includes('FT Miss'))                               { player.fta++; }
+      else if(desc.includes('Off. Rebound'))                          { player.or++; }
+      else if(desc.includes('Def. Rebound'))                          { player.dr++; }
+      else if(desc.includes('Assist'))                                { player.ast++; }
+      else if(desc.includes('Steal'))                                 { player.stl++; }
+      else if(desc.includes('Block'))                                 { player.blk++; }
+      else if(desc.includes('Turnover'))                              { player.to++; }
+      else if(desc.includes('Technical Foul'))                        { player.tf=(player.tf||0)+1; player.fls++; state[team].fouls++; }
+      else if(desc.includes('Unsportsmanlike'))                       { player.uf=(player.uf||0)+1; player.fls++; state[team].fouls++; }
+      else if(desc.includes('Foul (F)'))                              { player.fls++; state[team].fouls++; }
+    });
+
+    // ── Rebuild scoring events for running score ──
+    state.scoringEvents=[];
+    savedPlays.forEach(play=>{
+      const isHome=String(play.team_id)===String(state.home.dbId);
+      const isAway=String(play.team_id)===String(state.away.dbId);
+      if(!isHome&&!isAway) return;
+      const team=isHome?'home':'away';
+      const desc=play.description||'';
+      let pts=0;
+      if(desc.includes('2PT Made')) pts=2;
+      else if(desc.includes('3PT Made')) pts=3;
+      else if(desc.includes('Free Throw')&&!desc.includes('Miss')) pts=1;
+      if(pts>0){
+        let playerNum='';
+        if(play.player_id){
+          for(const t of ['home','away']){
+            const found=state[t].players.find(x=>String(x.dbId)===String(play.player_id));
+            if(found){ playerNum=String(found.num||''); break; }
+          }
+        }
+        state.scoringEvents.push({team,pts,playerNum});
+      }
+    });
+
+    // ── Rebuild play-by-play display ──
+    state.plays=savedPlays.map(play=>({
+     team: String(play.team_id)===String(state.home.dbId)?'home':String(play.team_id)===String(state.away.dbId)?'away':null,
+      text: play.description||play.action,
+      dotClass: play.action||'sys',
+      pts: 0, playerId: play.player_id,
+      quarter: play.quarter||'1',
+      scoreH: play.home_score||0,
+      scoreA: play.away_score||0,
+      time: play.clock_time||'00:00'
+    })).reverse();
+
+    // ── Rebuild biggest lead ──
+    state._homeLead=0; state._awayLead=0;
+    savedPlays.forEach(play=>{
+      const diff=(play.home_score||0)-(play.away_score||0);
+      if(diff>0) state._homeLead=Math.max(state._homeLead,diff);
+      if(diff<0) state._awayLead=Math.max(state._awayLead,Math.abs(diff));
+    });
+
+    // ── Rebuild quarter scores ──
+    state.quarterScores={'1':null,'2':null,'3':null,'4':null,'OT':null};
+    ['1','2','3','4','OT'].forEach(q=>{
+      const qp=savedPlays.filter(p=>p.quarter===q);
+      if(qp.length){ const last=qp[qp.length-1]; state.quarterScores[q]={home:last.home_score||0,away:last.away_score||0}; }
+    });
+
+    // ── Rebuild timeout usage ──
+    state.home.timeoutsUsed1H=0; state.home.timeoutsUsed2H=0;
+    state.away.timeoutsUsed1H=0; state.away.timeoutsUsed2H=0;
+    savedPlays.forEach(play=>{
+      if(!(play.description||'').includes('called timeout')) return;
+      const isFirst=(play.quarter==='1'||play.quarter==='2');
+     if(String(play.team_id)===String(state.home.dbId)){ if(isFirst) state.home.timeoutsUsed1H++; else state.home.timeoutsUsed2H++; }
+      else if(String(play.team_id)===String(state.away.dbId)){ if(isFirst) state.away.timeoutsUsed1H++; else state.away.timeoutsUsed2H++; }
+    });
+
+    state.currentGameId=gameId;
+    state.quarter=g.quarter||'1';
+    viewerMode=false;
+
     updateTeamNameDisplay('home'); updateTeamNameDisplay('away');
-    updateScore('home'); updateScore('away'); updateMeta();
-    renderRoster('home'); renderRoster('away'); renderStats();
+    updateScore('home'); updateScore('away');
+    // Re-read from games table to ensure PTO/FBP/2CP/FBTO are correct
+    state.home.pto=g.home_pto||0; state.home.fbp=g.home_fbp||0;
+    state.home.twocp=g.home_twocp||0; state.home.fbto=g.home_fbto||0;
+    state.away.pto=g.away_pto||0; state.away.fbp=g.away_fbp||0;
+    state.away.twocp=g.away_twocp||0; state.away.fbto=g.away_fbto||0;
+    console.log('PTO check — home:', state.home.pto, 'away:', state.away.pto, 'g.home_pto:', g.home_pto, 'g.away_pto:', g.away_pto);
+    state.home.pto=g.home_pto||0; state.home.fbp=g.home_fbp||0;
+    state.home.twocp=g.home_twocp||0; state.home.fbto=g.home_fbto||0;
+    state.away.pto=g.away_pto||0; state.away.fbp=g.away_fbp||0;
+    state.away.twocp=g.away_twocp||0; state.away.fbto=g.away_fbto||0;
+    console.log('After fix — home pto:', state.home.pto, 'away pto:', state.away.pto);
+    updateMeta(); updateSpecialStats();
+    dom.homePTOCount.textContent=state.home.pto||0;
+    dom.homeFBPCount.textContent=state.home.fbp||0;
+    dom.home2CPCount.textContent=state.home.twocp||0;
+    dom.homeFBTOCount.textContent=state.home.fbto||0;
+    dom.awayPTOCount.textContent=state.away.pto||0;
+    dom.awayFBPCount.textContent=state.away.fbp||0;
+    dom.away2CPCount.textContent=state.away.twocp||0;
+    dom.awayFBTOCount.textContent=state.away.fbto||0;
+    dom.homePTO.textContent=state.home.pto||0;
+    dom.homeFBP.textContent=state.home.fbp||0;
+    dom.home2CP.textContent=state.home.twocp||0;
+    dom.homeFBTO.textContent=state.home.fbto||0;
+    dom.awayPTO.textContent=state.away.pto||0;
+    dom.awayFBP.textContent=state.away.fbp||0;
+    dom.away2CP.textContent=state.away.twocp||0;
+    dom.awayFBTO.textContent=state.away.fbto||0;
+    renderRoster('home'); renderRoster('away');
+    renderStats(); renderPBP();
     document.querySelectorAll('.quarter-btn').forEach(b=>b.classList.toggle('active',b.dataset.q===state.quarter));
-    toast(viewerMode?'👁 Viewing live game':`✓ Loaded: ${g.home_name} vs ${g.away_name}`);
+    updateGameButtons();
+    toast(`✓ Loaded: ${g.home_name} vs ${g.away_name} — ready to print`);
   } catch(e){ toast('❌ '+e.message); }
   finally { hideLoading(); }
 }
 
 function mkPlayer(p) {
-  return { id:playerIdCounter++, dbId:p.id, dbStatId:null, num:p.num, name:p.name, pos:p.pos, onCourt:false,
+  return { id:playerIdCounter++, dbId:p.id, dbStatId:null, num:p.num, name:p.name, pos:p.pos, onCourt:false, isStarter:false,
     pts:0, fgm:0, fga:0, tpm:0, tpa:0, ftm:0, fta:0, or:0, dr:0, ast:0, stl:0, blk:0, to:0, fls:0, tf:0, uf:0, pto:0, fbp:0, twocp:0, fbto:0, secs:0 };
 }
 
@@ -1542,8 +1734,7 @@ async function addPlayerFromModal(){
   showLoading('Adding player...');
   try {
     const dbId=await savePlayerToDB(state[manageTeam].dbId,{num,name,pos});
-  state[manageTeam].players.push({id:playerIdCounter++,dbId,dbStatId:null,num,name,pos,onCourt:onCourtCount<5,pts:0,fgm:0,fga:0,tpm:0,tpa:0,ftm:0,fta:0,or:0,dr:0,ast:0,stl:0,blk:0,to:0,fls:0,tf:0,uf:0,pto:0,fbp:0,twocp:0,fbto:0,secs:0});
-    $('managePlayerName').value=''; $('managePlayerNum').value='';
+  state[manageTeam].players.push({id:playerIdCounter++,dbId,dbStatId:null,num,name,pos,onCourt:onCourtCount<5,isStarter:false,pts:0,fgm:0,fga:0,tpm:0,tpa:0,ftm:0,fta:0,or:0,dr:0,ast:0,stl:0,blk:0,to:0,fls:0,tf:0,uf:0,pto:0,fbp:0,twocp:0,fbto:0,secs:0});
     renderManageList(); renderRoster(manageTeam); renderStats(); toast(`✓ ${name} saved`);
   } catch(e){toast('❌ '+e.message);}
   finally{hideLoading();}
@@ -2070,8 +2261,8 @@ $('btnPrintScoresheet').addEventListener('click', () => {
   const leagueTxt=$('ssLeagueSelect')?.selectedOptions[0]?.text||'';
   const winnerName=state.home.score>state.away.score?hn:state.away.score>state.home.score?an:'TIE';
   const hFouls=state.home.fouls, aFouls=state.away.fouls;
-  const hBench=state.home.players.filter(p=>!p.onCourt).reduce((s,p)=>s+p.pts,0);
-  const aBench=state.away.players.filter(p=>!p.onCourt).reduce((s,p)=>s+p.pts,0);
+  const hBench=state.home.players.filter(p=>!p.isStarter).reduce((s,p)=>s+p.pts,0);
+  const aBench=state.away.players.filter(p=>!p.isStarter).reduce((s,p)=>s+p.pts,0);
 
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Scoresheet</title>
@@ -2304,8 +2495,8 @@ function buildScoresheet(){
   $('ssFinalB').innerHTML=`<strong>${state.away.score}</strong>`;
   $('ssWinner').textContent=state.home.score>state.away.score?hn:state.away.score>state.home.score?an:'TIE';
 
-  const homeBench=state.home.players.filter(p=>!p.onCourt).reduce((s,p)=>s+(p.pts||0),0);
-  const awayBench=state.away.players.filter(p=>!p.onCourt).reduce((s,p)=>s+(p.pts||0),0);
+  const homeBench=state.home.players.filter(p=>!p.isStarter).reduce((s,p)=>s+(p.pts||0),0);
+  const awayBench=state.away.players.filter(p=>!p.isStarter).reduce((s,p)=>s+(p.pts||0),0);
   $('ssStatPtoA').textContent=state.home.pto||0;   $('ssStatPtoB').textContent=state.away.pto||0;
   $('ssStatScpA').textContent=state.home.twocp||0; $('ssStatScpB').textContent=state.away.twocp||0;
   $('ssStatFbpA').textContent=state.home.fbp||0;   $('ssStatFbpB').textContent=state.away.fbp||0;
