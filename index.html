@@ -93,11 +93,9 @@
             <button class="clock-btn pause-btn" id="btnClockPause" disabled>⏸ PAUSE</button>
             <button class="clock-btn reset-btn" id="btnClockReset">↺ RESET</button>
           </div>
-          <div class="clock-set-row">
-            <span class="clock-set-label">SET MIN</span>
-            <input class="clock-min-input" id="clockMinInput" type="number" min="1" max="60" value="10" title="Enter minutes"/>
-            <button class="clock-set-apply" id="clockSetApply">SET</button>
-          </div>
+         <div class="clock-set-row">
+  <span class="clock-set-label" style="color:var(--accent);opacity:.6;font-size:.55rem;letter-spacing:1.5px;">▲ CLICK TIME TO EDIT</span>
+</div>
         </div>
         <button class="undo-btn" id="btnUndo">↩ UNDO</button>
       </div>
@@ -123,26 +121,25 @@
 
     <div class="main-body">
       <div class="roster-panel home">
-        <div class="panel-header"><span>HOME ROSTER</span><div class="panel-header-actions"><span class="roster-count" id="homeCount">0</span><button class="manage-btn" id="manageHomeBtn">⚙ MANAGE</button></div></div>
-        <div class="starting5-label"><span>⭐ STARTING 5</span><span class="on-court-count" id="homeOnCourtCount">0/5</span></div>
-        <div class="player-list" id="homeStarting"></div>
-        <div class="bench-label"><span>🪑 BENCH</span><span class="bench-count" id="homeBenchCount">0</span></div>
-        <div class="player-list" id="homeBench"></div>
-        <button class="sub-trigger-btn home-sub" id="homeSubBtn">🔄 SUBSTITUTION</button>
-      </div>
+  <div class="panel-header"><span>HOME ROSTER</span><div class="panel-header-actions"><span class="roster-count" id="homeCount">0</span><button class="manage-btn" id="homeSubBtn">🔄 SUBSTITUTION</button><button class="manage-btn" id="manageHomeBtn">⚙ MANAGE</button></div></div>
+  <div class="starting5-label"><span>⭐ STARTING 5</span><span class="on-court-count" id="homeOnCourtCount">0/5</span></div>
+  <div class="player-list" id="homeStarting"></div>
+  <div class="bench-label"><span>🪑 BENCH</span><span class="bench-count" id="homeBenchCount">0</span></div>
+  <div class="player-list" id="homeBench"></div>
+</div>
 
       <div class="center-panel">
         <div class="action-panel">
           <div class="action-header">RECORD ACTION — <span class="selected-player-badge" id="selectedLabel">select a player</span></div>
           <div class="action-grid">
-            <button class="act-btn made" data-action="2pm">2<br><small>2PT Made</small></button>
-            <button class="act-btn miss" data-action="2pm_miss">✕<br><small>2PT Miss</small></button>
-            <button class="act-btn made" data-action="3pm">3<br><small>3PT Made</small></button>
-            <button class="act-btn miss" data-action="3pm_miss">✕<br><small>3PT Miss</small></button>
-            <button class="act-btn made" data-action="ftm">FT<br><small>FT Made</small></button>
-            <button class="act-btn miss" data-action="ftm_miss">✕<br><small>FT Miss</small></button>
-            <button class="act-btn neutral" data-action="reb_off">OR<br><small>Off. Reb</small></button>
-            <button class="act-btn neutral" data-action="reb_def">DR<br><small>Def. Reb</small></button>
+          <button class="act-btn made" data-action="2pm">2<br><small>2PT Made</small></button>
+          <button class="act-btn miss" data-action="2pm_miss">✕<br><small>2PT Miss</small></button>
+          <button class="act-btn neutral" data-action="reb_off">OR<br><small>Off. Reb</small></button>
+          <button class="act-btn neutral" data-action="reb_def">DR<br><small>Def. Reb</small></button>
+          <button class="act-btn made" data-action="3pm">3<br><small>3PT Made</small></button>
+          <button class="act-btn miss" data-action="3pm_miss">✕<br><small>3PT Miss</small></button>
+          <button class="act-btn made" data-action="ftm">FT<br><small>FT Made</small></button>
+          <button class="act-btn miss" data-action="ftm_miss">✕<br><small>FT Miss</small></button>
             <button class="act-btn blue" data-action="ast">A<br><small>Assist</small></button>
             <button class="act-btn blue" data-action="stl">S<br><small>Steal</small></button>
             <button class="act-btn blue" data-action="blk">B<br><small>Block</small></button>
@@ -175,13 +172,12 @@
       </div>
 
       <div class="roster-panel away">
-        <div class="panel-header"><span>AWAY ROSTER</span><div class="panel-header-actions"><span class="roster-count" id="awayCount">0</span><button class="manage-btn" id="manageAwayBtn">⚙ MANAGE</button></div></div>
-        <div class="starting5-label"><span>⭐ STARTING 5</span><span class="on-court-count" id="awayOnCourtCount">0/5</span></div>
-        <div class="player-list" id="awayStarting"></div>
-        <div class="bench-label"><span>🪑 BENCH</span><span class="bench-count" id="awayBenchCount">0</span></div>
-        <div class="player-list" id="awayBench"></div>
-        <button class="sub-trigger-btn away-sub" id="awaySubBtn">🔄 SUBSTITUTION</button>
-      </div>
+  <div class="panel-header"><span>AWAY ROSTER</span><div class="panel-header-actions"><span class="roster-count" id="awayCount">0</span><button class="manage-btn" id="awaySubBtn">🔄 SUBSTITUTION</button><button class="manage-btn" id="manageAwayBtn">⚙ MANAGE</button></div></div>
+  <div class="starting5-label"><span>⭐ STARTING 5</span><span class="on-court-count" id="awayOnCourtCount">0/5</span></div>
+  <div class="player-list" id="awayStarting"></div>
+  <div class="bench-label"><span>🪑 BENCH</span><span class="bench-count" id="awayBenchCount">0</span></div>
+  <div class="player-list" id="awayBench"></div>
+</div>
     </div>
   </div>
 
@@ -538,6 +534,16 @@
     </div>
   </div>
 
+ <!-- ══ TIMEOUT MODAL ══ -->
+<div class="modal-overlay" id="timeoutModal">
+  <div class="modal timeout-modal">
+    <div class="timeout-modal-icon">⏱</div>
+    <div class="timeout-modal-team" id="timeoutModalTeam">HOME TIMEOUT</div>
+    <div class="timeout-modal-clock" id="timeoutModalClock">0:30</div>
+    <div class="timeout-modal-status">TIMEOUT IN PROGRESS</div>
+    <button class="modal-btn confirm timeout-resume-btn" id="btnResumeFromTimeout">▶ RESUME GAME</button>
+  </div>
+</div>
   <!-- ══ END GAME CONFIRM ══ -->
   <div class="modal-overlay" id="endGameModal">
     <div class="modal">

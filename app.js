@@ -203,10 +203,87 @@ function updateClockDisplay() {
   }
 }
 
+// ── CLICK CLOCK TO EDIT TIME ──
+dom.clockDisplay.style.cursor = 'pointer';
+dom.clockDisplay.title = 'Click to set time';
+dom.clockDisplay.style.textDecoration = 'underline dotted rgba(245,197,24,.4)';
+dom.clockDisplay.style.userSelect = 'none';
+
+dom.clockDisplay.addEventListener('click', () => {
+  if (clock.running) { toast('⚠ Pause the clock first!'); return; }
+
+  // Show an input over the clock
+  const current = `${Math.floor(clock.remaining/60)}:${(clock.remaining%60).toString().padStart(2,'0')}`;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = current;
+  input.placeholder = 'MM:SS or MM';
+  input.style.cssText = `
+    font-family:'Bebas Neue',sans-serif;
+    font-size:2.6rem;
+    letter-spacing:4px;
+    color:var(--accent);
+    background:transparent;
+    border:none;
+    border-bottom:2px solid var(--accent);
+    outline:none;
+    width:160px;
+    text-align:center;
+  `;
+
+  dom.clockDisplay.replaceWith(input);
+  input.focus();
+  input.select();
+
+  function applyTime() {
+    const val = input.value.trim();
+    let totalSecs = 0;
+
+    if (val.includes(':')) {
+      // MM:SS format
+      const parts = val.split(':');
+      const m = parseInt(parts[0]) || 0;
+      const s = parseInt(parts[1]) || 0;
+      totalSecs = m * 60 + s;
+    } else {
+      // Just minutes
+      const m = parseInt(val) || 0;
+      totalSecs = m * 60;
+    }
+
+    if (totalSecs < 1 || totalSecs > 3600) {
+      toast('⚠ Enter a valid time (e.g. 10:00 or 10)');
+      input.replaceWith(dom.clockDisplay);
+      updateClockDisplay();
+      return;
+    }
+
+    clock.totalSeconds = totalSecs;
+    clock.remaining = totalSecs;
+    clock.ms = 0;
+    input.replaceWith(dom.clockDisplay);
+    updateClockDisplay();
+    toast(`⏱ Clock set to ${Math.floor(totalSecs/60)}:${(totalSecs%60).toString().padStart(2,'0')}`);
+  }
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') applyTime();
+    if (e.key === 'Escape') {
+      input.replaceWith(dom.clockDisplay);
+      updateClockDisplay();
+    }
+  });
+  input.addEventListener('blur', applyTime);
+});
+
 
 
 
 function startClock() {
+  if (!state.currentGameId) {
+    toast('⚠ Press ▶ START GAME first!');
+    return;
+  }
   if (clock.running || (clock.remaining === 0 && clock.ms === 0)) return;
 clock.running = true;
   dom.btnClockStart.disabled = true;
@@ -247,25 +324,12 @@ function resetClock() {
   updateClockDisplay();
 }
 
-function setClockMins(m) {
-  stopClock();
-  clock.defaultMins = m;
-  clock.totalSeconds = m * 60;
-  clock.remaining = clock.totalSeconds;
-  clock.ms = 0;
-  updateClockDisplay();
-}
+
 
 dom.btnClockStart.addEventListener('click', startClock);
 dom.btnClockPause.addEventListener('click', stopClock);
 dom.btnClockReset.addEventListener('click', resetClock);
-$('clockSetApply').addEventListener('click', () => {
-  const val = parseInt($('clockMinInput').value);
-  if (!val || val < 1 || val > 60) { toast('Enter 1–60 minutes'); return; }
-  setClockMins(val);
-  toast(`⏱ Clock set to ${val} min`);
-});
-$('clockMinInput').addEventListener('keydown', e => { if(e.key==='Enter') $('clockSetApply').click(); });
+
 // ── PLAYTIME TRACKER ──
 let playtimeInterval = null;
 
@@ -297,26 +361,38 @@ function formatPlaytime(secs) {
 ══════════════════════════════ */
 document.querySelectorAll('.quarter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    state.quarterScores[state.quarter]={home:state.home.score,away:state.away.score};
-    document.querySelectorAll('.quarter-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active'); state.quarter=btn.dataset.q;
-    const q=btn.dataset.q;
-   if (q==='3') { 
+    const oldQ = state.quarter;
+    const newQ = btn.dataset.q;
+
+// Save fouls for the OLD quarter BEFORE switching
+state.home.quarterFouls = state.home.quarterFouls || {};
+state.away.quarterFouls = state.away.quarterFouls || {};
+state.home.quarterFouls[oldQ] = state.home.fouls;
+state.away.quarterFouls[oldQ] = state.away.fouls;
+
+state.quarterScores[oldQ]={home:state.home.score,away:state.away.score};
+document.querySelectorAll('.quarter-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active'); state.quarter=newQ;
+const q=newQ;
+
+// Restore fouls for the NEW quarter
+state.home.fouls = state.home.quarterFouls[newQ] ?? 0;
+state.away.fouls = state.away.quarterFouls[newQ] ?? 0;
+
+    if (q==='3') { 
       state.home.timeouts=3; state.home.timeoutsHalf=3; 
       state.away.timeouts=3; state.away.timeoutsHalf=3;
-      // Reset 2nd half used count when Q3 starts
       state.home.timeoutsUsed2H=0; state.away.timeoutsUsed2H=0;
       toast('Q3 started — 3 timeouts per team'); 
     }
     else if (q==='1') { 
       state.home.timeouts=2; state.home.timeoutsHalf=2; 
       state.away.timeouts=2; state.away.timeoutsHalf=2;
-      // Reset 1st half used count when Q1 starts
       state.home.timeoutsUsed1H=0; state.away.timeoutsUsed1H=0;
       toast('Q1 started — 2 timeouts per team'); 
     }
     else toast(`Q${state.quarter} started`);
-    resetClock(); addPlay(null,`Quarter ${state.quarter} started`,'sys',0); scheduleSaveGame(); updateMeta();
+    resetClock(); addPlay(null,`Quarter ${state.quarter} started`,'sys',0); scheduleSaveGame(); updateMeta(); renderRoster('home'); renderRoster('away'); renderStats();
   });
 });
 
@@ -456,6 +532,10 @@ function updateGameButtons() {
     // Game is live
     btnStart.style.display = 'none';
     btnEnd.style.display   = '';
+    // Enable clock
+    dom.btnClockStart.disabled = false;
+    dom.btnClockStart.title = '';
+    dom.btnClockStart.style.opacity = '1';
   } else {
     // No game yet
     btnStart.style.display = '';
@@ -463,6 +543,10 @@ function updateGameButtons() {
     btnStart.disabled = !bothTeams;
     btnStart.style.opacity = bothTeams ? '1' : '0.4';
     btnStart.title = bothTeams ? 'Start the game' : 'Select both teams first';
+    // Lock clock until game starts
+    dom.btnClockStart.disabled = true;
+    dom.btnClockStart.title = 'Press ▶ START GAME first';
+    dom.btnClockStart.style.opacity = '0.4';
   }
 }
 
@@ -1041,7 +1125,7 @@ async function loadGameIntoScorerFromDB(gameId) {
             if(found){ playerNum=String(found.num||''); break; }
           }
         }
-        state.scoringEvents.push({team,pts,playerNum});
+        state.scoringEvents.push({team,pts,playerNum,quarter:play.quarter||'1'});
       }
     });
 
@@ -1804,8 +1888,8 @@ function updateSubSummary(){
 
 function renderSubLists(){
   const outList=$('subOutList'), inList=$('subInList');
-  const starters=state[subTeam].players.filter(p=>p.onCourt);
-  const bench=state[subTeam].players.filter(p=>!p.onCourt);
+  const starters=state[subTeam].players.filter(p=>p.onCourt).sort((a,b)=>(parseInt(a.num)||0)-(parseInt(b.num)||0));
+const bench=state[subTeam].players.filter(p=>!p.onCourt).sort((a,b)=>(parseInt(a.num)||0)-(parseInt(b.num)||0));
   const tClass=subTeam==='home'?'home-tag':'away-tag';
 
   outList.innerHTML='';
@@ -1896,7 +1980,7 @@ function getSelectedPlayer(){if(!state.selectedPlayer)return null;return state[s
    SCORING EVENTS
 ══════════════════════════════ */
 function recordScoringEvent(team,pts,playerNum){
-  state.scoringEvents.push({team,pts,playerNum:playerNum!=null?String(playerNum):''});
+  state.scoringEvents.push({team,pts,playerNum:playerNum!=null?String(playerNum):'',quarter:state.quarter});
 }
 
 function updateBiggestLead() {
@@ -1964,6 +2048,62 @@ function updateSpecialStats(){
   dom.homeFBTOCount.textContent=state.home.fbto||0; dom.awayFBTOCount.textContent=state.away.fbto||0;
 }
 
+// ── TIMEOUT COUNTDOWN ──
+let timeoutCountdownInterval = null;
+
+function startTimeoutCountdown(team) {
+  let remaining = 30;
+  const clockEl = $('timeoutModalClock');
+  const teamEl  = $('timeoutModalTeam');
+
+  teamEl.textContent = `${teamName(team).toUpperCase()} TIMEOUT`;
+  clockEl.textContent = '0:30';
+
+  // Stop game clock during timeout
+  stopClock();
+
+  $('timeoutModal').classList.add('visible');
+
+  // Clear any existing countdown
+  if (timeoutCountdownInterval) clearInterval(timeoutCountdownInterval);
+
+  timeoutCountdownInterval = setInterval(() => {
+    remaining--;
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    clockEl.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+
+    // Color warning at 10 seconds
+    if (remaining <= 10) {
+      clockEl.style.color = 'var(--red)';
+      clockEl.style.textShadow = '0 0 30px rgba(239,83,80,.6)';
+    } else {
+      clockEl.style.color = 'var(--text)';
+      clockEl.style.textShadow = '0 0 30px rgba(245,197,24,.4)';
+    }
+
+    if (remaining <= 0) {
+      clearInterval(timeoutCountdownInterval);
+      timeoutCountdownInterval = null;
+      $('timeoutModal').classList.remove('visible');
+      toast(`⏱ Timeout over — ${teamName(team)} resume play!`);
+    }
+  }, 1000);
+}
+
+function resumeFromTimeout() {
+  if (timeoutCountdownInterval) {
+    clearInterval(timeoutCountdownInterval);
+    timeoutCountdownInterval = null;
+  }
+  $('timeoutModal').classList.remove('visible');
+  $('timeoutModalClock').style.color = 'var(--text)';
+  $('timeoutModalClock').style.textShadow = '0 0 30px rgba(245,197,24,.4)';
+  toast('▶ Game resumed!');
+}
+
+$('btnResumeFromTimeout').addEventListener('click', resumeFromTimeout);
+
 document.querySelectorAll('.timeout-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     const team=btn.dataset.team;
@@ -1975,11 +2115,14 @@ document.querySelectorAll('.timeout-btn').forEach(btn=>{
     const isFirstHalf = state.quarter==='1' || state.quarter==='2';
     if(isFirstHalf) state[team].timeoutsUsed1H++;
     else            state[team].timeoutsUsed2H++;
-    updateMeta(); addPlay(team,`${teamName(team)} called timeout (Q${state.quarter})`,team,0);
-    state.history.push(snap); scheduleSaveGame(); toast(`Timeout — ${state[team].timeouts} remaining`);
+    updateMeta();
+    addPlay(team,`${teamName(team)} called timeout (Q${state.quarter})`,team,0);
+    state.history.push(snap);
+    scheduleSaveGame();
+    // Start the 30 second timeout countdown
+    startTimeoutCountdown(team);
   });
 });
-
 function updateScore(team){dom[`${team}Score`].textContent=state[team].score;}
 function bumpScore(team){const el=dom[`${team}Score`];el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),200);}
 function updateMeta(){dom.homeTO.textContent=state.home.timeouts;dom.awayTO.textContent=state.away.timeouts;dom.homeFouls.textContent=state.home.fouls;dom.awayFouls.textContent=state.away.fouls;}
@@ -2052,7 +2195,8 @@ async function resetGame(){
   state[team].timeoutsUsed=0;
     state[team].timeoutsUsed1H=0;
     state[team].timeoutsUsed2H=0;
-    state[team].pto=0;state[team].fbp=0;state[team].twocp=0;state[team].fbto=0;
+   state[team].pto=0;state[team].fbp=0;state[team].twocp=0;state[team].fbto=0;
+   state[team].quarterFouls={};
     state[team].players.forEach(p=>{p.pts=0;p.fgm=0;p.fga=0;p.tpm=0;p.tpa=0;p.ftm=0;p.fta=0;p.or=0;p.dr=0;p.ast=0;p.stl=0;p.blk=0;p.to=0;p.fls=0;p.tf=0;p.uf=0;p.pto=0;p.fbp=0;p.twocp=0;p.fbto=0;p.secs=0;p.dbStatId=null;});
   });
   state.selectedPlayer=null;state.history=[];state.plays=[];state.scoringEvents=[];
@@ -2138,8 +2282,10 @@ $('btnExportPDF').addEventListener('click',()=>{
   const hs=state.home.score, as_=state.away.score;
   const winner = hs>as_?`<div class="winner">${hn} WIN</div>`:as_>hs?`<div class="winner">${an} WIN</div>`:`<div class="winner">TIE</div>`;
   const dateStr = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
-  const win=window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html><head><title>Box Score</title>
+  const win=window.open('','_blank','width=1200,height=900');
+if(!win){ toast('⚠ Pop-up blocked! Allow pop-ups for this site.'); return; }
+win.document.open();
+win.document.write(`<!DOCTYPE html><html><head><title>Box Score</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
     body{font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;color:#111;padding:24px 28px;font-size:11px;}
@@ -2202,7 +2348,8 @@ $('btnExportPDF').addEventListener('click',()=>{
   <div class="footer">Generated by Basketball Scorer</div>
   </body></html>`);
   win.document.close();
-  setTimeout(()=>win.print(), 500);
+win.focus();
+setTimeout(()=>{ win.print(); }, 800);
 });
 
 /* ══════════════════════════════
@@ -2222,32 +2369,36 @@ $('btnPrintScoresheet').addEventListener('click', () => {
     else { for(let i=0;i<pts;i++){ at++; if(at<=TOTAL) scoredAway[at]={playerNum:ev.playerNum,isFinal:(i===pts-1)}; } }
   }
 
-  let rsRows='';
-  for(let row=0;row<ROWS;row++){
-    rsRows+='<tr>';
-    for(let grp=0;grp<GROUPS;grp++){
-      const num=grp*ROWS+row+1;
-      const evH=scoredHome[num]||null, evA=scoredAway[num]||null;
-      const jA=(evH&&evH.isFinal)?String(evH.playerNum||''):'';
-      const jB=(evA&&evA.isFinal)?String(evA.playerNum||''):'';
-      const cA='rna'+(evH?evH.isFinal?' sh':' shi':'');
-      const cB='rnb'+(evA?evA.isFinal?' sa':' sai':'');
-      if(grp>0) rsRows+=`<td class="rdiv"></td>`;
-      rsRows+=`<td class="rja">${jA}</td><td class="${cA}">${num}</td><td class="${cB}">${num}</td><td class="rjb">${jB}</td>`;
-    }
-    rsRows+='</tr>';
-  }
+  // Build quarter-end maps for print
+const homeQEnd={}, awayQEnd={};
+let hR=0, aR=0;
+for(const q of ['1','2','3','4','OT']){
+  let hp=0, ap=0;
+  state.scoringEvents.filter(e=>e.team==='home'&&e.quarter===q).forEach(e=>hp+=Math.max(1,e.pts||1));
+  state.scoringEvents.filter(e=>e.team==='away'&&e.quarter===q).forEach(e=>ap+=Math.max(1,e.pts||1));
+  if(hp>0){ hR+=hp; if(hR<=TOTAL) homeQEnd[hR]=q; }
+  if(ap>0){ aR+=ap; if(aR<=TOTAL) awayQEnd[aR]=q; }
+}
 
-  function rosterRows(players){
-    const max=Math.max(players.length,15);
-    let r='';
-    for(let i=0;i<max;i++){
-      const p=players[i];
-      const fd=[1,2,3,4,5].map(n=>`<span class="fd${p&&p.fls>=n?' fm':''}">${n}</span>`).join('');
-      r+=`<tr><td class="rn">${p?`#${p.num}`:''}</td><td class="rnm">${p?p.name+(p.onCourt?' ★':''):''}</td><td class="rfd">${fd}</td></tr>`;
-    }
-    return r;
+let rsRows='';
+for(let row=0;row<ROWS;row++){
+  rsRows+='<tr>';
+  for(let grp=0;grp<GROUPS;grp++){
+    const num=grp*ROWS+row+1;
+    const evH=scoredHome[num]||null, evA=scoredAway[num]||null;
+    const jA=(evH&&evH.isFinal)?String(evH.playerNum||''):'';
+    const jB=(evA&&evA.isFinal)?String(evA.playerNum||''):'';
+    const qHA=homeQEnd[num]?`<span style="display:block;font-size:5pt;color:#c0392b;font-weight:900;line-height:1">Q${homeQEnd[num]}</span>`:'';
+    const qBA=awayQEnd[num]?`<span style="display:block;font-size:5pt;color:#0077a8;font-weight:900;line-height:1">Q${awayQEnd[num]}</span>`:'';
+    const cA='rna'+(evH?evH.isFinal?' sh':' shi':'')+(homeQEnd[num]?' rq-end-a':'');
+    const cB='rnb'+(evA?evA.isFinal?' sa':' sai':'')+(awayQEnd[num]?' rq-end-b':'');
+    const bA=homeQEnd[num]?'border-bottom:2.5px solid #c0392b !important;':'';
+    const bB=awayQEnd[num]?'border-bottom:2.5px solid #0077a8 !important;':'';
+    if(grp>0) rsRows+=`<td class="rdiv"></td>`;
+    rsRows+=`<td class="rja">${jA}${qHA}</td><td class="${cA}" style="${bA}">${num}</td><td class="${cB}" style="${bB}">${num}</td><td class="rjb">${jB}${qBA}</td>`;
   }
+  rsRows+='</tr>';
+}
 
   const qs=state.quarterScores;
   const hn=teamName('home'), an=teamName('away');
@@ -2263,9 +2414,20 @@ $('btnPrintScoresheet').addEventListener('click', () => {
   const hFouls=state.home.fouls, aFouls=state.away.fouls;
   const hBench=state.home.players.filter(p=>!p.isStarter).reduce((s,p)=>s+p.pts,0);
   const aBench=state.away.players.filter(p=>!p.isStarter).reduce((s,p)=>s+p.pts,0);
-
-  const win=window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Scoresheet</title>
+  const win=window.open('','_blank','width=1400,height=900');
+if(!win){ toast('⚠ Pop-up blocked! Allow pop-ups for this site.'); return; }
+win.document.open();
+function rosterRows(players){
+  const max=Math.max(players.length,15);
+  let r='';
+  for(let i=0;i<max;i++){
+    const p=players[i];
+    const fd=[1,2,3,4,5].map(n=>`<span class="fd${p&&p.fls>=n?' fm':''}">${n}</span>`).join('');
+    r+=`<tr><td class="rn">${p?`#${p.num}`:''}</td><td class="rnm">${p?p.name+(p.onCourt?' ★':''):''}</td><td class="rfd">${fd}</td></tr>`;
+  }
+  return r;
+}
+win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Scoresheet</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 @page{size:A4 portrait;margin:5mm;}
@@ -2327,10 +2489,13 @@ body{font-family:Arial,sans-serif;font-size:6.5pt;color:#000;background:#fff;}
 .rna{color:#bbb;background:#fdf8f8;}
 .rnb{color:#bbb;background:#f8fcff;}
 .rdiv{width:2px;background:#ccc;border:none;}
-.sh{background:#333!important;color:#fff!important;border-color:#333!important;}
-.sa{background:#333!important;color:#fff!important;border-color:#333!important;}
-.shi{background:#ddd!important;color:#999!important;}
-.sai{background:#ddd!important;color:#999!important;}
+*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+.sh{background:#ff5722!important;color:#fff!important;border-color:#ff5722!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+.sa{background:#00b4d8!important;color:#fff!important;border-color:#00b4d8!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+.shi{background:rgba(255,87,34,.5)!important;color:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+.sai{background:rgba(0,180,216,.5)!important;color:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+.rna{color:#999;background:#fdf8f8;}
+.rnb{color:#999;background:#f8fcff;}
 
 /* ── BOTTOM SECTION ── */
 .bottom{display:grid;grid-template-columns:1fr 1fr;gap:2mm;margin-top:1mm;}
@@ -2461,8 +2626,9 @@ body{font-family:Arial,sans-serif;font-size:6.5pt;color:#000;background:#fff;}
 
 </div>
 </body></html>`);
-  win.document.close();
-  setTimeout(()=>win.print(), 500);
+ win.document.close();
+win.focus();
+setTimeout(()=>{ win.print(); }, 800);
 });
 function buildScoresheet(){
   const hn=teamName('home'), an=teamName('away');
@@ -2583,11 +2749,28 @@ function buildRunningScore(){
   const ROWS=40, GROUPS=4, TOTAL=ROWS*GROUPS;
   const scoredHome={}, scoredAway={};
   let homeTotal=0, awayTotal=0;
+
+  // Build quarter-end marker maps
+  const homeQEnd={}, awayQEnd={};
+  let hR=0, aR=0;
+  for(const q of ['1','2','3','4','OT']){
+    let hp=0, ap=0;
+    state.scoringEvents.filter(e=>e.team==='home'&&e.quarter===q).forEach(e=>hp+=Math.max(1,e.pts||1));
+    state.scoringEvents.filter(e=>e.team==='away'&&e.quarter===q).forEach(e=>ap+=Math.max(1,e.pts||1));
+    if(hp>0){ hR+=hp; if(hR<=TOTAL) homeQEnd[hR]=q; }
+    if(ap>0){ aR+=ap; if(aR<=TOTAL) awayQEnd[aR]=q; }
+  }
+
   for(const ev of state.scoringEvents){
     const pts=Math.max(1,ev.pts||1);
-    if(ev.team==='home'){ for(let i=0;i<pts;i++){ homeTotal++; if(homeTotal<=TOTAL) scoredHome[homeTotal]={playerNum:ev.playerNum,isFinal:(i===pts-1)}; } }
-    else { for(let i=0;i<pts;i++){ awayTotal++; if(awayTotal<=TOTAL) scoredAway[awayTotal]={playerNum:ev.playerNum,isFinal:(i===pts-1)}; } }
+    const q=ev.quarter||'?';
+    if(ev.team==='home'){
+      for(let i=0;i<pts;i++){ homeTotal++; if(homeTotal<=TOTAL) scoredHome[homeTotal]={playerNum:ev.playerNum,isFinal:(i===pts-1),quarter:q}; }
+    } else {
+      for(let i=0;i<pts;i++){ awayTotal++; if(awayTotal<=TOTAL) scoredAway[awayTotal]={playerNum:ev.playerNum,isFinal:(i===pts-1),quarter:q}; }
+    }
   }
+
   for(let row=0;row<ROWS;row++){
     const tr=document.createElement('tr'); let html='';
     for(let grp=0;grp<GROUPS;grp++){
@@ -2596,12 +2779,20 @@ function buildRunningScore(){
       const evH=scoredHome[num]||null, evA=scoredAway[num]||null;
       const jerseyA=(evH&&evH.isFinal)?String(evH.playerNum||''):'';
       const jerseyB=(evA&&evA.isFinal)?String(evA.playerNum||''):'';
+      const qHA=homeQEnd[num]?`<span class="rs-q-marker">Q${homeQEnd[num]}</span>`:'';
+      const qBA=awayQEnd[num]?`<span class="rs-q-marker rs-q-marker-away">Q${awayQEnd[num]}</span>`:'';
       let numClassA='rs-num-a', numClassB='rs-num-b';
       if(evH) numClassA+=evH.isFinal?' scored-home':' scored-home-interim';
       if(evA) numClassB+=evA.isFinal?' scored-away':' scored-away-interim';
-      html+=`<td class="rs-a">${jerseyA}</td><td class="${numClassA}">${num}</td><td class="${numClassB}">${num}</td><td class="rs-b">${jerseyB}</td>`;
+      if(homeQEnd[num]) numClassA+=' rs-q-end-a';
+      if(awayQEnd[num]) numClassB+=' rs-q-end-b';
+      html+=`<td class="rs-a">${jerseyA}${qHA}</td>`;
+      html+=`<td class="${numClassA}">${num}</td>`;
+      html+=`<td class="${numClassB}">${num}</td>`;
+      html+=`<td class="rs-b">${jerseyB}${qBA}</td>`;
     }
-    tr.innerHTML=html; tbody.appendChild(tr);
+    tr.innerHTML=html;
+    tbody.appendChild(tr);
   }
 }
 
