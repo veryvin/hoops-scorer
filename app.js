@@ -2028,8 +2028,8 @@ document.querySelectorAll('.act-btn').forEach(btn=>{
       case 'blk':      p.blk++;addPlay(team,`${p.name} — Block`,team,0,p.dbId);break;
       case 'to':       p.to++;addPlay(team,`${p.name} — Turnover`,team,0,p.dbId);break;
       case 'foul':     p.fls++;state[team].fouls++;updateMeta();addPlay(team,`${p.name} — Foul (F)`,team,0,p.dbId);break;
-      case 'tf':       p.tf=(p.tf||0)+1;state[team].fouls++;updateMeta();addPlay(team,`${p.name} — Technical Foul (TF)`,team,0,p.dbId);break;
-      case 'uf':       p.uf=(p.uf||0)+1;state[team].fouls++;updateMeta();addPlay(team,`${p.name} — Unsportsmanlike Foul (UF)`,team,0,p.dbId);break;
+      case 'tf':       p.tf=(p.tf||0)+1;p.fls++;state[team].fouls++;updateMeta();addPlay(team,`${p.name} — Technical Foul (TF)`,team,0,p.dbId);break;
+      case 'uf':       p.uf=(p.uf||0)+1;p.fls++;state[team].fouls++;updateMeta();addPlay(team,`${p.name} — Unsportsmanlike Foul (UF)`,team,0,p.dbId);break;
       default: return;
     }
     updateScore(team); updateBiggestLead(); updateMeta(); renderRoster('home'); renderRoster('away'); renderStats();
@@ -2412,8 +2412,7 @@ for(let row=0;row<ROWS;row++){
   const leagueTxt=$('ssLeagueSelect')?.selectedOptions[0]?.text||'';
   const winnerName=state.home.score>state.away.score?hn:state.away.score>state.home.score?an:'TIE';
   const hFouls=state.home.fouls, aFouls=state.away.fouls;
-  const hBench=state.home.players.filter(p=>!p.isStarter).reduce((s,p)=>s+p.pts,0);
-  const aBench=state.away.players.filter(p=>!p.isStarter).reduce((s,p)=>s+p.pts,0);
+ 
   const win=window.open('','_blank','width=1400,height=900');
 if(!win){ toast('⚠ Pop-up blocked! Allow pop-ups for this site.'); return; }
 win.document.open();
@@ -2587,7 +2586,7 @@ body{font-family:Arial,sans-serif;font-size:6.5pt;color:#000;background:#fff;}
             <tr><td>2nd Chance Pts</td><td class="ca">${state.home.twocp||0}</td><td class="cb">${state.away.twocp||0}</td></tr>
             <tr><td>Fast Break Pts</td><td class="ca">${state.home.fbp||0}</td><td class="cb">${state.away.fbp||0}</td></tr>
             <tr><td>FB Pts from TO</td><td class="ca">${state.home.fbto||0}</td><td class="cb">${state.away.fbto||0}</td></tr>
-            <tr><td>Bench Points</td><td class="ca">${hBench}</td><td class="cb">${aBench}</td></tr>
+            
           </tbody>
         </table>
         <div class="sth" style="margin-top:1mm;">GAME SUMMARY</div>
@@ -2661,13 +2660,12 @@ function buildScoresheet(){
   $('ssFinalB').innerHTML=`<strong>${state.away.score}</strong>`;
   $('ssWinner').textContent=state.home.score>state.away.score?hn:state.away.score>state.home.score?an:'TIE';
 
-  const homeBench=state.home.players.filter(p=>!p.isStarter).reduce((s,p)=>s+(p.pts||0),0);
-  const awayBench=state.away.players.filter(p=>!p.isStarter).reduce((s,p)=>s+(p.pts||0),0);
+  
   $('ssStatPtoA').textContent=state.home.pto||0;   $('ssStatPtoB').textContent=state.away.pto||0;
   $('ssStatScpA').textContent=state.home.twocp||0; $('ssStatScpB').textContent=state.away.twocp||0;
   $('ssStatFbpA').textContent=state.home.fbp||0;   $('ssStatFbpB').textContent=state.away.fbp||0;
   $('ssStatFbtoA').textContent=state.home.fbto||0; $('ssStatFbtoB').textContent=state.away.fbto||0;
-  $('ssStatBenchA').textContent=homeBench;          $('ssStatBenchB').textContent=awayBench;
+  
 
   // BIGGEST LEAD — auto from tracked state
   if($('ssGsBigLeadA')) $('ssGsBigLeadA').textContent=state._homeLead>0?`+${state._homeLead}`:'—';
