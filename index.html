@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script type="module" src="app.js"></script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="theme-color" content="#f5c518"/>
@@ -364,10 +365,10 @@
   <div class="modal-overlay" id="scoresheetModal">
     <div class="modal scoresheet-modal">
       <div class="ss-header no-print-header">
-        <div class="ss-fiba">🏀 FIBA OCEANIA</div>
+        <div class="ss-fiba">LEAGUE SCORESHEET</div>
         <div class="ss-title-block">
-          <div class="ss-org">FEDERATION INTERNATIONALE DE BASKETBALL</div>
-          <div class="ss-org">INTERNATIONAL BASKETBALL FEDERATION</div>
+          <div class="ss-org">BASKETBALL LEAUGE NI BOSS</div>
+          <div class="ss-org">BASKETBALL LEAGUE</div>
           <div class="ss-big-title">SCORESHEET</div>
         </div>
         <button class="ss-close-btn" id="closeScoresheetModal">✕</button>
@@ -515,7 +516,7 @@
       </div>
       <div class="lm-list" id="lmList"><div class="lm-empty">No leagues yet. Add one above!</div></div>
       <div class="lm-footer">
-        <div class="lm-footer-note">💾 Saved to Supabase database</div>
+       <div class="lm-footer-note">💾 Saved to Firebase database</div>
         <button class="modal-btn cancel" id="closeLeagueManager2">Close</button>
       </div>
     </div>
@@ -572,17 +573,7 @@
     }
   </script>
 
-  <!-- ══ APP SCRIPT — cache-busted with hourly timestamp ══ -->
-  <script>
-    (function() {
-      // Changes every hour — forces fresh download without manual version bumps
-      const v = Math.floor(Date.now() / (1000 * 60 * 60));
-      const s = document.createElement('script');
-      s.src = 'app.js?v=' + v;
-      s.defer = false;
-      document.currentScript.parentNode.appendChild(s);
-    })();
-  </script>
+
 
 </body>
 </html>

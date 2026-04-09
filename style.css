@@ -1850,3 +1850,36 @@ body::after{content:'';position:fixed;top:50%;left:50%;transform:translate(-50%,
   .ss-rs-table td.rs-num-a.scored-home{background:#ff5722 !important;color:#fff !important;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
   .ss-rs-table td.rs-num-b.scored-away{background:#00b4d8 !important;color:#fff !important;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
 }
+.ss-foul-grid {
+  display: flex;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+.ss-foul-quarter-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.ss-foul-q-label {
+  font-size: .5rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+  font-family: 'Bebas Neue', sans-serif;
+}
+.ss-foul-q-boxes {
+  display: flex;
+  gap: 2px;
+}
+.ss-foul-box {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.ss-foul-box.marked {
+  background: var(--red);
+  border-color: var(--red);
+}

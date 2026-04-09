@@ -1,86 +1,119 @@
-'use strict';
-
 /* ══════════════════════════════
-   SUPABASE CONFIG
+   FIREBASE CONFIG
 ══════════════════════════════ */
-const SUPABASE_URL = 'https://svtjetsjhuihtoplvotk.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN2dGpldHNqaHVpaHRvcGx2b3RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5OTI1NDAsImV4cCI6MjA4OTU2ODU0MH0.c9aeahloK4kbNWBSFnc7mVqkVZ49CODWvMWT6_NQahU';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, push, update, remove, query, orderByChild, equalTo, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-const db = {
-  async query(table, options = {}) {
-    const { method = 'GET', body, params = {} } = options;
-    let url = `${SUPABASE_URL}/rest/v1/${table}`;
-    const qp = new URLSearchParams(params);
-    if ([...qp].length) url += '?' + qp.toString();
-    const headers = {
-      'apikey': SUPABASE_KEY,
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation',
-    };
-    const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
-    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || `HTTP ${res.status}`); }
-    if (res.status === 204) return [];
-    return res.json();
-  },
-  select: (t, p)    => db.query(t, { params: p }),
-  insert: (t, b)    => db.query(t, { method: 'POST', body: b }),
-  update: (t, b, p) => db.query(t, { method: 'PATCH', body: b, params: p }),
-  delete: (t, p)    => db.query(t, { method: 'DELETE', params: p }),
+const firebaseConfig = {
+  apiKey: "AIzaSyCSG4gF7IlCa0-Pkw-GJ6lGsTQgIGOD-SE",
+  authDomain: "scorer-9b628.firebaseapp.com",
+  databaseURL: "https://scorer-9b628-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "scorer-9b628",
+  storageBucket: "scorer-9b628.firebasestorage.app",
+  messagingSenderId: "756774429209",
+  appId: "1:756774429209:web:184b8ef95002c93fef0088"
 };
 
-/* ── Direct fetch for filtered queries ── */
-async function dbFetch(path) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
+const firebaseApp = initializeApp(firebaseConfig);
+const rtdb = getDatabase(firebaseApp);
 
 /* ══════════════════════════════
-   SUPABASE REALTIME
+   DB HELPERS (Firebase Realtime Database)
 ══════════════════════════════ */
-let realtimeWs = null;
+const db = {
+  // Get all records from a collection, optionally filtered by a field
+  async select(collection, params = {}) {
+    const dbRef = ref(rtdb, collection);
+    const snap = await get(dbRef);
+    if (!snap.exists()) return [];
+    const data = [];
+    snap.forEach(child => {
+      data.push({ id: child.key, ...child.val() });
+    });
 
-function connectRealtime() {
-  const wsUrl = `${SUPABASE_URL.replace('https','wss')}/realtime/v1/websocket?apikey=${SUPABASE_KEY}&vsn=1.0.0`;
-  realtimeWs = new WebSocket(wsUrl);
-  realtimeWs.onopen = () => {
-    setOnlineStatus(true);
-    realtimeWs.send(JSON.stringify({
-      topic: 'realtime:public:games', event: 'phx_join',
-      payload: { config: { broadcast:{self:false}, presence:{key:''}, postgres_changes:[{event:'*',schema:'public',table:'games'}] } },
-      ref: '1'
-    }));
-  };
-  realtimeWs.onmessage = (e) => {
-    try {
-      const msg = JSON.parse(e.data);
-      if (msg.event === 'postgres_changes' && msg.payload?.data) {
-        const change = msg.payload.data;
-        if (change.table === 'games') handleRealtimeGameChange(change);
+    // Filter by params (simulate Supabase filtering)
+    let filtered = data;
+    Object.entries(params).forEach(([key, value]) => {
+      if (key === 'select' || key === 'order' || key === 'limit') return;
+      // Parse Supabase-style filters like 'eq.value', 'in.(a,b,c)'
+      if (typeof value === 'string') {
+        if (value.startsWith('eq.')) {
+          const val = value.slice(3);
+          filtered = filtered.filter(r => String(r[key]) === String(val));
+        } else if (value.startsWith('in.(')) {
+          const vals = value.slice(4, -1).split(',').map(v => v.trim());
+          filtered = filtered.filter(r => vals.includes(String(r[key])));
+        }
       }
-      if (msg.event === 'phx_reply' && msg.payload?.status === 'ok') {
-        setTimeout(() => {
-          if (realtimeWs?.readyState === WebSocket.OPEN)
-            realtimeWs.send(JSON.stringify({ topic:'phoenix', event:'heartbeat', payload:{}, ref:null }));
-        }, 25000);
-      }
-    } catch(e) {}
-  };
-  realtimeWs.onclose = () => { setOnlineStatus(false); setTimeout(connectRealtime, 5000); };
-  realtimeWs.onerror = () => setOnlineStatus(false);
-}
+    });
 
-function handleRealtimeGameChange(change) {
-  const gameData = change.record || change.new_record;
-  if (!gameData) return;
-  if (state.currentGameId && gameData.id === state.currentGameId && viewerMode) syncGameFromDB(gameData);
-  // Always refresh games view if open
-  if (document.getElementById('view-games').classList.contains('active')) {
-    loadGames(currentGamesFilter);
+    // Order
+    if (params.order) {
+      const [field, dir] = params.order.split('.');
+      filtered.sort((a, b) => {
+        if (a[field] < b[field]) return dir === 'desc' ? 1 : -1;
+        if (a[field] > b[field]) return dir === 'desc' ? -1 : 1;
+        return 0;
+      });
+    }
+
+    // Limit
+    if (params.limit) filtered = filtered.slice(0, parseInt(params.limit));
+
+    return filtered;
+  },
+
+  // Insert a new record
+  async insert(collection, body) {
+    if (Array.isArray(body)) {
+      const results = [];
+      for (const item of body) {
+        const newRef = push(ref(rtdb, collection));
+        const record = { ...item, id: newRef.key, created_at: new Date().toISOString() };
+        await set(newRef, record);
+        results.push(record);
+      }
+      return results;
+    } else {
+      const newRef = push(ref(rtdb, collection));
+      const record = { ...body, id: newRef.key, created_at: new Date().toISOString() };
+      await set(newRef, record);
+      return [record];
+    }
+  },
+
+  // Update records matching a filter
+  async update(collection, body, params = {}) {
+    const all = await db.select(collection, params);
+    for (const record of all) {
+      await update(ref(rtdb, `${collection}/${record.id}`), body);
+    }
+    return all;
+  },
+
+  // Delete records matching a filter
+  async delete(collection, params = {}) {
+    const all = await db.select(collection, params);
+    for (const record of all) {
+      await remove(ref(rtdb, `${collection}/${record.id}`));
+    }
+    return all;
   }
+};
+
+/* ══════════════════════════════
+   FIREBASE REALTIME LISTENER
+══════════════════════════════ */
+function connectRealtime() {
+  const gamesRef = ref(rtdb, 'games');
+  onValue(gamesRef, (snapshot) => {
+    setOnlineStatus(true);
+    if (document.getElementById('view-games').classList.contains('active')) {
+      loadGames(currentGamesFilter);
+    }
+  }, (error) => {
+    setOnlineStatus(false);
+  });
 }
 
 function setOnlineStatus(online) {
@@ -88,18 +121,6 @@ function setOnlineStatus(online) {
   const label = document.getElementById('onlineLabel');
   if (online) { dot.classList.add('live'); label.textContent='LIVE'; label.style.color='#4caf50'; }
   else { dot.classList.remove('live'); label.textContent='OFFLINE'; label.style.color='var(--muted)'; }
-}
-
-function syncGameFromDB(g) {
-  if (!g) return;
-  state.home.score=g.home_score||0; state.away.score=g.away_score||0;
-  state.home.fouls=g.home_fouls||0; state.away.fouls=g.away_fouls||0;
-  state.home.timeouts=g.home_timeouts??5; state.away.timeouts=g.away_timeouts??5;
-  state.home.pto=g.home_pto||0; state.home.fbp=g.home_fbp||0; state.home.twocp=g.home_twocp||0; state.home.fbto=g.home_fbto||0;
-  state.away.pto=g.away_pto||0; state.away.fbp=g.away_fbp||0; state.away.twocp=g.away_twocp||0; state.away.fbto=g.away_fbto||0;
-  state.quarter=g.quarter||'1';
-  updateScore('home'); updateScore('away'); updateMeta(); updateSpecialStats();
-  document.querySelectorAll('.quarter-btn').forEach(b=>b.classList.toggle('active',b.dataset.q===state.quarter));
 }
 
 /* ══════════════════════════════
@@ -420,9 +441,9 @@ function invalidateLeagueCache() {
 }
  
 async function loadTeamsFromDB(leagueId) {
-  let path = `teams?select=id,name,league_id,created_at&order=name.asc`;
-  if (leagueId) path += `&league_id=eq.${leagueId}`;
-  return dbFetch(path);
+  const params = { 'order': 'name.asc' };
+  if (leagueId) params.league_id = `eq.${leagueId}`;
+  return db.select('teams', params);
 }
 
 async function loadPlayersFromDB(teamDbId) {
@@ -2546,7 +2567,7 @@ body{font-family:Arial,sans-serif;font-size:6.5pt;color:#000;background:#fff;}
       <div class="th ha">TEAM A — ${hn}</div>
       <div class="tof">
         <div class="tob"><label>TIME-OUTS</label><div class="tobx">${[...Array(5)].map((_,i)=>`<span class="${i<(state.home.timeoutsUsed1H+state.home.timeoutsUsed2H)?'used':''}">${i<(state.home.timeoutsUsed1H+state.home.timeoutsUsed2H)?'✓':''}</span>`).join('')}</div></div>
-        <div class="tob"><label>TEAM FOULS</label><div class="tobx">${[...Array(8)].map((_,i)=>`<span class="${i<hFouls?'used':''}">${i+1}</span>`).join('')}</div></div>
+        <div class="tob"><label>TEAM FOULS</label><div class="tobx" style="display:flex;gap:3px;flex-wrap:nowrap">${['Q1','Q2','Q3','Q4'].map((q,qi)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:1px"><span style="font-size:4pt;color:#888">${q}</span><div style="display:flex;gap:1px">${[...Array(5)].map((_,i)=>`<span class="${qi*5+i<hFouls?'used':''}" style="width:8px;height:8px;font-size:0"></span>`).join('')}</div></div>`).join('')}</div></div>
       </div>
       <table class="rt"><tbody>${rosterRows(state.home.players)}</tbody></table>
       <div class="cr">Coach: ${ssHCoach||'________________________________'}</div>
@@ -2556,7 +2577,7 @@ body{font-family:Arial,sans-serif;font-size:6.5pt;color:#000;background:#fff;}
       <div class="th hb">TEAM B — ${an}</div>
       <div class="tof">
       <div class="tob"><label>TIME-OUTS</label><div class="tobx">${[...Array(5)].map((_,i)=>`<span class="${i<(state.away.timeoutsUsed1H+state.away.timeoutsUsed2H)?'used':''}">${i<(state.away.timeoutsUsed1H+state.away.timeoutsUsed2H)?'✓':''}</span>`).join('')}</div></div>
-        <div class="tob"><label>TEAM FOULS</label><div class="tobx">${[...Array(8)].map((_,i)=>`<span class="${i<aFouls?'used':''}">${i+1}</span>`).join('')}</div></div>
+        <div class="tob"><label>TEAM FOULS</label><div class="tobx" style="display:flex;gap:3px;flex-wrap:nowrap">${['Q1','Q2','Q3','Q4'].map((q,qi)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:1px"><span style="font-size:4pt;color:#888">${q}</span><div style="display:flex;gap:1px">${[...Array(5)].map((_,i)=>`<span class="${qi*5+i<aFouls?'used':''}" style="width:8px;height:8px;font-size:0"></span>`).join('')}</div></div>`).join('')}</div></div>
       </div>
       <table class="rt"><tbody>${rosterRows(state.away.players)}</tbody></table>
       <div class="cr">Coach: ${ssACoach||'________________________________'}</div>
@@ -2643,8 +2664,8 @@ function buildScoresheet(){
   buildToBoxes('ssAwayTO2', 3, Math.min(state.away.timeoutsUsed2H || 0, 3));
 
   // TEAM FOULS — auto-fill from live scorer state
-  buildFoulGrid('ssHomeFoulBoxes', 8, state.home.fouls);
-  buildFoulGrid('ssAwayFoulBoxes', 8, state.away.fouls);
+  buildFoulGrid('ssHomeFoulBoxes', 20, state.home.fouls);
+  buildFoulGrid('ssAwayFoulBoxes', 20, state.away.fouls);
 
   buildRosterTable('ssHomeRosterBody', state.home.players);
   buildRosterTable('ssAwayRosterBody', state.away.players);
@@ -2689,13 +2710,27 @@ function buildFoulGrid(id, count, markedCount=0) {
   const el=$(id);
   if(!el) return;
   el.innerHTML='';
-  for(let i=1; i<=count; i++){
-    const b=document.createElement('div');
-    b.className='ss-foul-box'+(i<=markedCount?' marked':'');
-    b.textContent=i;
-    b.addEventListener('click',()=>b.classList.toggle('marked'));
-    el.appendChild(b);
-  }
+  const quarters = ['Q1','Q2','Q3','Q4'];
+  let boxNum = 0;
+  quarters.forEach((qLabel, qi) => {
+    const group = document.createElement('div');
+    group.className = 'ss-foul-quarter-group';
+    const label = document.createElement('span');
+    label.className = 'ss-foul-q-label';
+    label.textContent = qLabel;
+    group.appendChild(label);
+    const boxRow = document.createElement('div');
+    boxRow.className = 'ss-foul-q-boxes';
+    for(let i=0; i<5; i++){
+      boxNum++;
+      const b = document.createElement('div');
+      b.className = 'ss-foul-box' + (boxNum <= markedCount ? ' marked' : '');
+      b.addEventListener('click', () => b.classList.toggle('marked'));
+      boxRow.appendChild(b);
+    }
+    group.appendChild(boxRow);
+    el.appendChild(group);
+  });
 }
 function buildRosterTable(tbodyId, players) {
   const tbody = $(tbodyId);
